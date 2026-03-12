@@ -1,0 +1,27 @@
+'Created: 2/18/2026 2:39 PM
+
+''' <summary>
+''' User Defined Module
+''' </summary>
+Module Lib_StringManipulation
+
+	''' <summary>
+	''' Finds Last Index of A Substring
+	''' </summary>
+	''' <param name="haystack">String to Search Within</param> 
+	''' <param name="needle">Substring to Search For</param> 
+	public Function String_LastIndexOf(haystack As String, needle As String) As Integer
+		Dim index As Integer =-1
+		Dim lastFound As Integer = -1
+		Dim start As Integer = 0
+
+		Do
+			lastFound = index
+			start = index + 1
+			index = haystack.IndexOf(needle, start)
+		Loop While (start < (haystack.Length - needle.Length) And index <> -1)
+
+		Return lastFound
+	End Function
+
+End Module

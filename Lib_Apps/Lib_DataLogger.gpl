@@ -1,0 +1,259 @@
+''' <summary>
+''' Datalogger Classes
+''' </summary>
+Module Lib_DataLogger
+
+	Public Class DataLogger_Status
+		Public Dim IsLoggerActive As Boolean = False
+		Public Dim TriggerState As Integer = 0 ' 0 = not triggered, 1 = trigger on, 2 = trigger off
+		Public Dim BufferFilledPercent As Integer = 0 ' 0-100
+		Public Dim LogBufferWritenPrecent As Integer = 0 ' 0-100
+
+		Public Dim RecordCount As Integer = 0
+		Public Dim LoggingInterval As Double = 0
+		Public Dim ItemsPerRecord As Integer = 0
+		Public Dim RecordSizeBytes As Integer = 0
+
+		Public Dim CurrentConfig As New DataLogger_Configuration
+
+		Public Sub New()
+
+		End Sub
+
+		Public Sub Refresh()
+			Dim active As Integer = Controller.PDbNum(754, 1, 0, 1)
+			If (active = 1) Then
+				IsLoggerActive = True
+			Else
+				IsLoggerActive = False
+			End If
+
+			RecordCount = Controller.PDbNum(754, 1, 0, 2)
+			LoggingInterval = Controller.PDbNum(754, 1, 0, 3)
+			ItemsPerRecord = Controller.PDbNum(754, 1, 0, 4)
+			RecordSizeBytes = Controller.PDbNum(754, 1, 0, 5)
+			BufferFilledPercent = Controller.PDbNum(754, 1, 0, 9)
+			TriggerState = Controller.PDbNum(754, 1, 0, 10)
+			LogBufferWritenPrecent = Controller.PDbNum(754, 1, 0, 11)
+
+		End Sub
+
+		Public Function GetDialogStateString() As String
+			Dim stateString As String
+			Dim newLine As String = "<br>"
+			If (IsLoggerActive) Then
+				stateString = "Data Logger: Logging..." & newLine
+			Else
+				stateString = "Data Logger: Inactive" & newLine
+			End If
+
+			stateString &= "Trigger State: " & CStr(TriggerState) & newLine & newLine
+
+			stateString &= "Buffer Fill: " & CStr(BufferFilledPercent) & "%" & newLine
+			stateString &= "Log Written: " & CStr(LogBufferWritenPrecent) & "%" & newLine & newLine
+			stateString &= "Download URL: " & newLine & GetDataLogDownloadLinkWeb()
+
+			Return stateString
+		End Function
+
+		Public Function GetDataLogDownloadLinkWeb() As String
+			Dim downloadURL As String = "http://" & Controller.PDb(420) & "/datalog_s.pdl"
+			Return downloadURL
+		End Function
+
+	End Class
+
+	Public Class DataLogger_DataSource
+		Public Dim DataItemDataID As Integer = 0
+		Public Dim DataItemIndex1 As Integer = 1
+		Public Dim DataItemIndex2 As Integer = 0
+		Public Dim DataItemArray As Integer = 1
+
+		Public Sub New()
+
+		End Sub
+
+		Public Sub New(dataID As Integer, index1 As Integer, index2 As Integer, arrayIndex As Integer)
+			DataItemDataID = dataID
+			DataItemIndex1 = index1
+			DataItemIndex2 = index2
+			DataItemArray = arrayIndex
+		End Sub
+
+		Public Function GetString() As String
+			Return CStr(DataItemDataID) & ", " & CStr(DataItemIndex1) & ", " & CStr(DataItemIndex2) & ", " & CStr(DataItemArray)
+		End Function
+
+		Public Sub WriteDataValue(index As Integer)
+			Controller.PDb(701 + index) = " " & GetString()
+		End Sub
+
+	End Class
+
+	Public Class DataLogger_Configuration
+		' Trigger Comparisons
+		Public Dim TriggerComparision As Integer = 0
+		Public Const Comp_None As Integer = 0
+		Public Const Comp_GT As Integer = 1
+		Public Const Comp_LT As Integer = 2
+		Public Const Comp_EQ As Integer = 3
+		Public Const Comp_NEQ As Integer = 4
+
+		' Trigger Modes
+		Public Dim TriggerMode As Integer = -1
+		Public Const Trig_None As Integer = -1
+		Public Const Trig_RunTrueTillFull As Integer = 0
+		Public Const Trig_RunTrueTillFalse As Integer = 1
+		Public Const Trig_StopOnTrue As Integer = 2
+
+		Public Dim LogTimeLength As Integer = 10
+		Public Dim LogTimeOffset As Integer = -5
+		Public Dim LogInterval As Double = 0.002
+
+		Public Dim DataSources(15) As DataLogger_DataSource
+
+		Public Dim Trigger1 As New DataLogger_DataSource
+		Public Dim Trigger2 As New DataLogger_DataSource
+
+		Public Dim LogName As String = "GPL Program Data Collection"
+
+		Public Sub New()
+			Clear()
+			LogName = Controller.PDb(755)
+		End Sub
+
+		Public Sub Clear()
+			Dim ii As Integer
+			For ii = 0 To 15
+				DataSources(ii) = New DataLogger_DataSource()
+			Next ii
+			Trigger1 = New DataLogger_DataSource()
+			Trigger2 = New DataLogger_DataSource()
+
+			TriggerComparision = 0
+			TriggerMode = -1
+			LogInterval = 0.001
+			LogTimeLength = 10
+			LogTimeOffset = -5
+			LogName = "GPL Program Data Collection"
+		End Sub
+
+		Public Sub AddDataSource(ByVal ds As DataLogger_DataSource)
+			Dim ii As Integer
+			For ii = 0 To 15
+				If (DataSources(ii).DataItemDataID = 0) Then
+					DataSources(ii) = ds
+					Exit Sub
+				End If
+			Next ii
+		End Sub
+
+		Public Sub SendConfigToController()
+
+			Dim ii As Integer
+
+			' Logging Parameters
+			For ii = 0 To 15
+				If (DataSources(ii).DataItemDataID = 0) Then
+					DataSources(ii) = New DataLogger_DataSource()
+				End If
+				WriteSingleDataValue(ii, DataSources(ii).DataItemDataID, DataSources(ii).DataItemIndex1, DataSources(ii).DataItemIndex2, DataSources(ii).DataItemArray)
+			Next ii
+
+			' Trigger
+			Controller.PDb(741) = GetTriggerString(TriggerComparision, TriggerMode, LogTimeOffset, _
+			Trigger1.DataItemDataID, Trigger1.DataItemIndex1, Trigger1.DataItemIndex2, Trigger1.DataItemArray,_
+			Trigger2.DataItemDataID, Trigger2.DataItemIndex1, Trigger2.DataItemIndex2, Trigger2.DataItemArray)
+
+			'Timing
+			Controller.PDb(751) = CStr(LogInterval)
+			Controller.PDb(756) = CStr(LogTimeLength)
+			Controller.PDb(755) = LogName
+
+			TriggerDatalogConfigLoad()
+		End Sub
+
+		Public Function WriteDataLogToFolder(filePath As String) As String
+			Dim cmd As String = ""
+'			Dim dateStamp As String = Controller.PDb(121)
+'			Dim logType As String = LogName
+'			Dim ii As Integer
+'			For ii = 0 To dateStamp.Length -1
+'				If (String.Compare(dateStamp.Substring(ii, 1), " ") = 0 Or _
+'					String.Compare(dateStamp.Substring(ii, 1), ":") = 0) Then
+'					dateStamp = dateStamp.Substring(0, ii) & "-" & dateStamp.Substring(ii + 1)
+'				End If
+'			Next ii
+
+'			cmd &= "" & filePath
+
+'			If (String.Compare(filePath.Substring(filePath.Length -5, 4), ".dat") <> 0) Then
+'				cmd &= "DL_" & dateStamp & "_" & logType & ".dat"
+'			End If
+
+			Dim files() As String
+			Dim newFile As String
+			Dim ii As Integer
+			Dim index As Integer = 0
+			Dim found As Boolean = True
+			While found = True
+				found = False
+				index += 1
+				
+				files = File.GetFiles(filePath)
+				newFile = "DataLog_"& CStr(index) & ".dat"
+				For ii = 1 To files.Length-1
+					If (String.Compare(files(ii), newFile) = 0 ) Then
+						found = True
+					End If
+				Next ii
+				
+			End While
+			newFile = filePath & newFile
+
+			cmd = "Datalog 0, """ & newFile & """"
+
+			Console.WriteLine(controller.Command(cmd))
+			Return newFile
+		End Function
+
+		Private Function GetTriggerString(ByVal triggerOpCode As Integer, ByVal triggerMode As Integer, ByVal triggerOffset As Integer, _
+		ByVal item1DataID As Integer, ByVal item1Index1 As Integer, ByVal item1Index2 As Integer, ByVal item1Array As Integer,_
+		ByVal item2DataID As Integer, ByVal item2Index1 As Integer, ByVal item2Index2 As Integer, ByVal item2Array As Integer) As String
+
+		Return CStr(triggerOpCode) & ", " & CStr(triggerMode) & ", " & CStr(triggerOffset) & ", " _
+		& CStr(item1DataID) & ", " & CStr(item1Index1) & ", " & CStr(item1Index2) & ", " & CStr(item1Array) & ", " _
+		& CStr(item2DataID) & ", " & CStr(item2Index1) & ", " & CStr(item2Index2) & ", " & CStr(item2Array)
+		End Function
+
+
+		Private Sub WriteSingleDataValue(index As Integer, ByVal dataID As Integer, ByVal index1 As Integer, ByVal index2 As Integer, ByVal arrayIndex As Integer)
+		Controller.PDb(701 + index) = " " & CStr(dataID) & ", " & CStr(index1) & ", " & CStr(index2) & ", " & CStr(arrayIndex)
+		End Sub
+
+		Private Sub TriggerDatalogConfigLoad()
+		Thread.Sleep(25)
+		Controller.PDb(752) = "1"
+		Thread.Sleep(100)
+		End Sub
+
+		Public Sub ResetLastErrorCode
+		Controller.PDbNum(320, 1, 0, 1) = 0 ' Last Error Code
+		Thread.Sleep(100)
+		End Sub
+
+		Public Sub TriggerDataLog()
+		Thread.Sleep(100)
+		Controller.PDbNum(753) = "1"
+		Thread.Sleep(100)
+		End Sub
+
+		Public Sub DisableDataLog()
+		Thread.Sleep(100)
+		Controller.PDbNum(753) = "0"
+		Thread.Sleep(100)
+		End Sub
+
+	End Class
+
+End Module

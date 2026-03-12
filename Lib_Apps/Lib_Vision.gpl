@@ -1,0 +1,216 @@
+
+''' <summary>
+''' Lib Apps Vision v0.3
+''' </summary>
+Module Lib_Vision
+
+	' Triggers Camera 1 or 2
+	Public Sub CameraAquire(isFront As Boolean)
+		If (isFront) Then
+			PerformCameraAction("system.cameraacquire 1")
+		Else
+			PerformCameraAction("system.cameraacquire 2")
+		End If
+	End Sub
+	
+	' Check if both ArUcos are found
+	Public Function CheckForArucos(ArucoLeft As Integer, ArucoRight As Integer, _
+									visProcess As String, visTool As String, settlingTime As Integer, _
+									ByRef foundLeft As Boolean, ByRef foundRight As Boolean) As Boolean
+		Dim vis As New Vision
+		Dim visres As VisResult
+		Dim ii As Integer
+
+		foundLeft = False
+		foundRight = False
+
+		Move.WaitForEOM
+		Thread.Sleep(settlingTime)
+		vis.Process(visProcess)
+
+		For ii = 1 To vis.ResultCount(visTool)
+			visres = vis.Result(visTool, ii)
+			If (visres.Info(0) = ArucoLeft) Then
+				foundLeft = True
+			End If
+			If (visres.Info(0) = ArucoRight) Then
+				foundRight = True
+			End If
+		Next ii
+
+		Return foundLeft And foundRight
+	End Function
+
+
+#Region Vision Projects
+
+	Public Sub VisionProjectSave()
+		PerformCameraAction("system.save")
+	End Sub
+	
+	Public Sub VisionProjectSaveAs(projectName As String)
+		PerformCameraAction("system.saveas " & projectName)
+	End Sub
+	
+	Public Sub VisionProjectDelete(projectName As String)
+		PerformCameraAction("system.deleteproject " & projectName)
+	End Sub
+
+	' Loads the project of the specified name
+	Public Sub VisionProjectLoad(projectName As String)
+		PerformCameraAction("system.loadproject " & projectName)
+	End Sub
+
+	' Returns the active project name
+	Public Function VisionProjectGetCurrentName() As String
+		Return GetCameraProperty("system.projectname")
+	End Function
+
+	' Lists the available projects delimited by a comma
+	Public Function VisionProjectListAll() As String
+		Return GetCameraProperty("system.listprojects")
+	End Function
+#End Region
+
+
+#Region Aquire
+
+	' Get Aquire Vision Tool Exposure Setting
+	Public Function VisionToolGetExposure(aquireToolName As String) As Integer
+		Dim s As String
+		s = GetCameraProperty(aquireToolName & "." & "exposure")
+		Return CInt(s)
+	End Function
+	
+	Public Sub VisionToolSetExposure(aquireToolName As String, exposure As Integer)
+		SetCameraProperty(aquireToolName & "." & "exposure", CStr(exposure))
+	End Sub
+	
+
+	' Get Aquire Vision Tool Brightness Setting
+	Public Function VisionToolGetBrightness(aquireToolName As String) As Integer
+		Dim s As String
+		s = GetCameraProperty(aquireToolName & "." & "brightness")
+		Return CInt(s)
+	End Function
+	
+	Public Sub VisionToolSetBrightness(aquireToolName As String, brightness As Integer)
+		SetCameraProperty(aquireToolName & "." & "brightness", CStr(brightness))
+	End Sub
+	
+
+	' Get Aquire Vision Tool Contrast Setting
+	Public Function VisionToolGetContrast(aquireToolName As String) As Integer
+		Dim s As String
+		s = GetCameraProperty(aquireToolName & "." & "contrast")
+		Return CInt(s)
+	End Function
+	
+	Public Sub VisionToolSetContrast(aquireToolName As String, contrast As Integer)
+		SetCameraProperty(aquireToolName & "." & "contrast", CStr(contrast))
+	End Sub
+	
+
+	Public Function VisionToolGetSaturation(aquireToolName As String) As Integer
+		Dim s As String
+		s = GetCameraProperty(aquireToolName & "." & "saturation")
+		Return CInt(s)
+	End Function
+
+	Public Sub VisionToolSetSaturation(aquireToolName As String, saturation As Integer)
+		SetCameraProperty(aquireToolName & "." & "saturation", CStr(saturation))
+	End Sub
+	
+	
+	Public Sub VisionToolSetExposureSettings(aquireToolName As String, exposure As Integer, _
+		brightness As Integer, contrast As Integer)
+		SetCameraProperty(aquireToolName & "." & "exposure", CStr(exposure))
+		SetCameraProperty(aquireToolName & "." & "brightness", CStr(brightness))
+		SetCameraProperty(aquireToolName & "." & "contrast", CStr(contrast))
+	End Sub
+
+#End Region
+ 
+#Region LEDs
+
+	Public Function GetLightControlBrightness(lightControlToolName As String) As Integer
+		Dim s As String
+		s = GetCameraProperty(lightControlToolName & "." & "brightness")
+		Return CInt(s)
+	End Function
+
+	Public Sub SetLightControlBrightness(lightControlToolName As String, brightness As Integer)
+		SetCameraProperty(lightControlToolName & "." & "brightness", CStr(brightness))
+	End Sub
+	
+	
+	Public Function GetLightControlDelay(lightControlToolName As String) As Integer
+		Dim s As String
+		s = GetCameraProperty(lightControlToolName & "." & "delay")
+		Return CInt(s)
+	End Function
+
+	Public Sub SetLightControlDelay(lightControlToolName As String, delay As Integer)
+		SetCameraProperty(lightControlToolName & "." & "delay", CStr(delay))
+	End Sub
+	
+#End Region
+
+#Region Advanced Functions
+	Public Function VisionGetResultCount() As Integer
+		Dim vis As New Vision
+		Dim result As VisResult
+		Return vis.ResultCount
+	End Function
+
+	Public Sub VisionColorPickerGetRGB(toolName As String, index As Integer, ByRef red As Double, ByRef green As Double, ByRef blue As Double)
+		Dim res As VisResult
+		res = VisionGetResult(toolName, index)
+		red = res.Info(0)
+		green = res.Info(1)
+		blue = res.Info(2)
+	End Sub
+	
+	Public Function VisionGetResult(toolName As String, index As Integer) As VisResult
+		Dim vis As New Vision
+		Return vis.Result(toolName, index)
+	End Function
+	
+	Public Sub VisionGetResultXY(toolName As String, index As Integer, ByRef posX As Double, ByRef posY As Double, ByRef theta As Double)
+		Dim res As VisResult
+		res = VisionGetResult(toolName, index)
+		posX = res.Loc.X
+		posY = res.Loc.Y
+		theta = res.Loc.Roll
+	End Sub
+	
+	Public Function VisionGetBarcode(toolName As String, index As Integer) As String
+		Dim res As VisResult
+		Dim barcodeValue As String
+		res = VisionGetResult(toolName, index)
+		barcodeValue =  res.InfoString
+		return barcodeValue
+	End Function
+	
+
+#End Region
+
+
+	Public Function GetCameraProperty(cmd As String) As String
+		Dim vis As New Vision
+		Dim result As String
+		result = vis.ToolProperty(cmd)
+		Return result
+	End Function
+
+	Public Sub SetCameraProperty(cmd As String, value As String)
+		Dim vis As New Vision
+		vis.ToolProperty(cmd) = value
+	End Sub
+	
+	Public Sub PerformCameraAction(cmd As String)
+		Dim vis As New Vision
+		GetCameraProperty(cmd)
+	End Sub
+
+End Module

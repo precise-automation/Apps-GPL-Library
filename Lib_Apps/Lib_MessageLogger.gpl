@@ -1,0 +1,179 @@
+'Created: 2/17/2026 2:44 PM
+
+''' <summary>
+''' Message Logger v0.3
+''' </summary>
+
+Module Lib_MessageLogger
+	Public Class MessageLogger
+
+		Public Dim DebugToConsole As Boolean = True
+		Public Dim DebugToControllerLog As Boolean = False
+		Public Dim DebugToFile As Boolean = True
+
+		Private Dim BaseLogPath As String = "/ROMDISK/Logs/"
+		Public Dim CurrentLogPath As String = "/ROMDISK/Logs/LibAppsLog.txt"
+		Private Dim BaseFileName As String = "LibAppsLog.txt"
+
+		Public Dim FileIsOpen As Boolean = False
+
+		Private Dim Writer As StreamWriter
+
+		''' <summary>
+		''' Starts new log "/ROMDISK/Logs/LibAppsLog.txt"
+		''' </summary>
+		Public Sub New()
+			NewOverload(BaseFileName, False)
+		End Sub
+
+		''' <summary>
+		''' Starts new log
+		''' </summary>
+		''' <param name="fileName">File Name (Writes to /ROMDISK/Logs/)</param>
+		Public Sub New(fileName As String)
+			NewOverload(fileName, False)
+		End Sub
+
+		''' <summary>
+		''' Starts new log
+		''' </summary>
+		''' <param name="fileName">File Name (Writes to /ROMDISK/Logs/)</param>
+		''' <param name="append">Appends to Existing File if True, Else Overwrites Existing File</param>
+		Public Sub New(fileName As String, append As Boolean)
+			NewOverload(fileName, append)
+		End Sub
+
+		Private Sub NewOverload(fileName As String, append As Boolean)
+			Dim err As Exception
+			BaseFileName = fileName
+			CurrentLogPath = BaseLogPath & BaseFileName
+			Try
+				Writer = New StreamWriter(CurrentLogPath, append)
+			Catch err
+				If (err.ErrorCode = -508) Then
+					Dim pathEnd As Integer = String_LastIndexOf(CurrentLogPath, "/")
+					Dim folderPath As String = CurrentLogPath.Substring(0, pathEnd)
+					File.CreateDirectory(folderPath)
+					Writer = New StreamWriter(CurrentLogPath, append)
+				Else
+					Throw err
+				End If
+			End Try
+			Writer.AutoFlush = True
+			FileIsOpen = True
+		End Sub
+
+		Public Sub Close()
+			FileIsOpen = False
+			Writer.Close
+		End Sub
+
+		Public Sub ReOpen(append As Boolean)
+			Thread.Sleep(1000)
+			NewOverload(BaseFileName, append)
+		End Sub
+
+		Public Sub LogLineWithTimeStamp(msg As String)
+			Dim stamp As String
+			stamp = Controller.PDb(121)
+			LogLine(stamp & " : " & msg)
+		End Sub
+
+		Public Sub LogLine(msg As String)
+			If (DebugToConsole) Then
+				Console.WriteLine(msg)
+			End If
+
+			If (DebugToControllerLog) Then
+				Controller.SystemMessage(msg)
+			End If
+
+			If (DebugToFile And FileIsOpen) Then
+				Dim err As Exception
+				Try
+					If(GetFreeSpace() < 10.0) Then
+						Console.WriteLine("Restarting File: " & CurrentLogPath)
+						Close()
+						ReOpen(False)
+					End If 
+					Writer.WriteLine(msg)
+				Catch err
+					thread.Sleep(250)
+					If (err.ErrorCode = -323 Or err.ErrorCode=-200) Then
+						Console.WriteLine("Error " & CStr(err.ErrorCode) & " : " & err.Message)
+						Console.WriteLine("Restarting File: " & CurrentLogPath)
+						Close()
+						ReOpen(False)
+						Writer.WriteLine(msg)
+					Else
+						Throw err
+					End If
+				End Try
+			End If
+		End Sub
+
+		Public Sub Log(msg As String)
+			If (DebugToConsole) Then
+				Console.Write(msg)
+			End If
+
+			If (DebugToControllerLog) Then
+				Controller.SystemMessage(msg)
+			End If
+
+			If (DebugToFile And FileIsOpen) Then
+				Dim err As Exception
+				Try
+					If(GetFreeSpace() < 10.0) Then
+						Console.WriteLine("Restarting File: " & CurrentLogPath)
+						Close()
+						ReOpen(False)
+					End If 
+					Writer.Write(msg)
+				Catch err
+					thread.Sleep(250)
+					If (err.ErrorCode = -323 Or err.ErrorCode=-200) Then
+						Console.WriteLine("Error " & CStr(err.ErrorCode) & " : " & err.Message)
+						Console.WriteLine("Restarting File: " & CurrentLogPath)
+						Close()
+						ReOpen(False)
+						Writer.Write(msg)
+					Else
+						Throw err
+					End If
+				End Try
+			End If
+		End Sub
+		
+		Public Function GetFreeSpace() As Integer
+			Dim used, free, total As Integer
+			Dim percentFree As Double
+			used = Controller.PDbNum(130,,,2)
+			free = Controller.PDbNum(130,,,4)
+			total = free + used
+			percentFree =  (free / (total))*100
+			Return percentFree
+		End Function
+
+	End Class
+
+	Public Sub Directory_DeleteRecersively(path As String)
+		Dim dirs() As String
+		Dim files() As String
+		Dim ii As Integer
+		dirs = File.GetDirectories(path)
+		files = File.GetFiles(path)
+
+		' Delete all files in current folder
+		For ii = 1 To files.Length
+			File.DeleteFile(path & files(ii -1))
+		Next ii
+
+		' Delete all folders inside of current folder
+		For ii = 1 To dirs.Length
+			Directory_DeleteRecersively(path & dirs(ii -1) & "/")
+			File.DeleteDirectory(path & dirs(ii -1) & "/")
+		Next ii
+	End Sub
+End Module
+

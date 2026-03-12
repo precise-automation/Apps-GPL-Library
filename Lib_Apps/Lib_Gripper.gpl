@@ -1,0 +1,81 @@
+'Created: 4/10/2025 9:50 AM
+
+''' <summary>
+''' User Defined Module
+''' </summary>
+Public Module Lib_Gripper
+
+	Public Class ServoGripper
+		Public Dim GripperAxis As Integer = 5
+		Public Dim GripperOpenedPosition As Double = 138
+		Public Dim GripperClosedPosition As Double = 122
+		Public Dim GripMotionProfile As Profile
+		Public Dim PositionCheckTollerance As Double = 2.0
+
+		''' <summary>
+		''' Creates new instance of Gripper Class
+		''' </summary>
+		''' <param name="posOpen">Position of J5 when Gripper is Open</param>
+		''' <param name="posClosed">Position of J5 when Gripper is Closed</param>
+		''' <param name="gripProf">Profile to use when opening and closing the gripper</param>
+		''' <remarks>changes global camera calibration data structures.</remarks>
+
+		Public Sub New(posOpen As Double, posClosed As Double, gripProf As Profile)
+			GripperOpenedPosition = posOpen
+			GripperClosedPosition = posClosed
+			GripMotionProfile = gripProf
+		End Sub
+
+		Public Sub Actuate(grip As Boolean)
+			If (grip) Then
+				Close
+			Else
+				Open
+			End If
+		End Sub
+
+		Public Sub Open
+			Actuation(GripperOpenedPosition)
+		End Sub
+
+		Public Sub Close
+			Actuation(GripperClosedPosition)
+		End Sub
+
+		Public Sub Actuation(targetPos As Double)
+			If (Math.Abs(Robot.WhereAngles.Angle(GripperAxis) - targetPos) > PositionCheckTollerance) Then
+				Move.OneAxis(GripperAxis, targetPos, False, GripMotionProfile)
+				Move.WaitForEOM
+			End If
+		End Sub
+
+		Public Function IsClosed() As Boolean
+			Return Math.Abs(Robot.WhereAngles.Angle(GripperAxis) - GripperClosedPosition) < PositionCheckTollerance
+		End Function
+
+		Public Function IsOpened() As Boolean
+			Return Math.Abs(Robot.WhereAngles.Angle(GripperAxis) - GripperOpenedPosition) < PositionCheckTollerance
+		End Function
+
+		Public Sub CloseGripperWithForce(forcePercent As Integer)
+			Dim torques(12) As Double
+			forcePercent *= -1
+
+			Move.StartTorqueCntrl(Math.Pow(2,GripperAxis), 0, torques)
+
+			' Start Gentile
+			torques(GripperAxis-1) = -7
+			Move.SetTorques(torques)
+			thread.Sleep(250)
+
+			' Full Force
+			torques(GripperAxis-1) = forcePercent
+			Move.SetTorques(torques)
+			thread.Sleep(500)
+
+			Move.StopSpecialModes
+		End Sub
+
+	End Class
+
+End Module

@@ -1,0 +1,18 @@
+'Created: 4/10/2025 9:42 AM
+
+''' <summary>
+''' User Defined Module
+''' </summary>
+Module Lib_Apps
+	Public Const Vers As String = "Lib_Apps-0.0.4"
+	Public Dim MsgLogger As MessageLogger
+
+    ''' <summary>
+    ''' Main entry point for the module
+    ''' </summary>
+    Public Sub Lib_Apps_Init
+		Console.WriteLine(Vers)
+		MsgLogger = New MessageLogger()
+    End Sub 
+
+End Module

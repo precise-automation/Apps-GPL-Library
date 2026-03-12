@@ -1,0 +1,86 @@
+'Created: 2/17/2026 3:10 PM
+
+''' <summary>
+''' Designed for Modbus large integers v0.1
+''' </summary>
+Module Lib_ModbusHelper
+	Public  Dim ModbusHelperIpAddress As String
+
+	Public Sub ModbusSplitValue(value As Double, ByRef hiDec As Integer, ByRef loDec As Integer)
+		' Scale to whole number using numeric math.
+		' For this specific value, multiply by 1000 is exact enough; then round to nearest integer.
+		' If Round isn't available in your environment, see the fallback note below.
+		Dim scaled As Integer
+		scaled = (value * 1000)   ' -> 1401688
+
+		' Split into 16-bit registers using pure arithmetic
+		hiDec = (scaled - (scaled Mod 65536)) / 65536   ' integer divide by 65536 -> 21
+		loDec = scaled Mod 65536                        ' remainder -> 25432
+
+		' Verify reconstruction
+		'Dim reconstructed as Integer
+		'reconstructed = hiDec * 65536 + loDec           ' -> 1401688
+	End Sub
+
+	Public Function ModbusReadDualRegister(addr As Integer) As Integer
+		Dim valHigh, valLow As Integer
+
+		valHigh = ModbusRead(addr)
+		valLow = ModbusRead(addr + 1)
+		Thread.Sleep(50)
+
+		Return ModbusCombineTwoRegisters(valHigh, valLow)
+	End Function
+
+	Public Sub ModbusWriteDualRegister(addr As Integer, value As Integer)
+		Dim valHigh, valLow As Integer
+
+		ModbusSplitValue(value, valHigh, valLow)
+		ModbusWrite(addr, valHigh)
+		ModbusWrite(addr + 1, valLow)
+		Thread.Sleep(50)
+	End Sub
+
+	Public Function ModbusCombineTwoRegisters(ByRef hiDec As Integer, ByRef lowDec As Integer) As Integer
+		Dim err As Exception
+		Try
+			Return (hiDec * 65536) + lowDec
+		Catch err
+			console.WriteLine("Error: ModbusCombineTwoRegisters has overflowed")
+			Return -1
+		End Try
+	End Function
+
+	Public Sub ModbusWrite(addr As Integer, value As Integer)
+		Dim err As Exception
+		Dim ep As New IPEndPoint(ModbusHelperIpAddress)
+		Dim mb As New Modbus(ep)
+		Try
+			mb.WriteSingleRegister(addr, value)
+		Catch err
+			console.WriteLine(err.Message)
+		Finally
+			mb.Close()
+			Thread.Sleep(5)
+		End Try
+	End Sub
+
+	Public Function ModbusRead(addr As Integer) As Integer
+		Dim err As Exception
+		Dim val() As Integer
+		Dim ep As New IPEndPoint(ModbusHelperIpAddress)
+		Dim mb As New Modbus(ep)
+
+		Try
+			mb.ReadHoldingRegisters(addr, 1, val)
+		Catch err
+			console.WriteLine(err.Message)
+		Finally
+			mb.Close()
+			Thread.Sleep(5)
+		End Try
+
+		Return val(0)
+	End Function
+
+End Module

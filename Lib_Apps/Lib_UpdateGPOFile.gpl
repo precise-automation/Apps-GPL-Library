@@ -1,0 +1,81 @@
+'Created: 2/17/2026 3:02 PM
+
+''' <summary>
+''' User Defined Module
+''' </summary>
+Module Lib_UpdateGPOFile
+
+	Public Function GetCurrentProjectName() As String
+		' Get Current Project Name
+		Dim thread As Thread = Thread.CurrentThread()
+		Dim GplProjectName As String = thread.Project
+		Return GplProjectName
+	End Function
+
+
+	''' <summary>
+	''' Updates a Location Variable in the GPO File on the flash version of the program
+	''' <param name="locationName"> Name of the location varaible </param> 
+	''' <param name="updatedLocation"> Updated value of the location varaible </param> 
+	''' <paramref name="isRefFrame"> Is A Reference Frame </param>
+	''' </summary>
+	Public Sub UpdateGpoFileVariable(locationName As String, updatedLocation As Location, isRefFrame As Boolean)
+		Dim GplProjectName As String = GetCurrentProjectName()
+		Dim path As String = "/flash/projects/" + GplProjectName + "/GModule.gpo"
+		Dim enitreFile As String
+		Dim line As String
+
+		' Make sure location is cartesian
+		If (updatedLocation.Type <> 0) Then
+			Dim Err As New Exception
+			err.Message = "Location is of joint type"
+			err.ErrorCode = -1337
+			Throw err
+		End If
+
+		'create the new string to replace the old data in the gmodule file
+		Dim updatedVaraibleDataString As String
+		updatedVaraibleDataString = CStr(updatedLocation.X) + ","
+		updatedVaraibleDataString += CStr(updatedLocation.Y) + ","
+		updatedVaraibleDataString += CStr(updatedLocation.Z) + ","
+		updatedVaraibleDataString += CStr(updatedLocation.Yaw) + ","
+		updatedVaraibleDataString += CStr(updatedLocation.Pitch) + ","
+		updatedVaraibleDataString += CStr(updatedLocation.Roll)
+
+		Dim targetStringOpen As String
+		If (isRefFrame = False) Then
+			targetStringOpen = locationName + ".XYZ("
+		Else
+			targetStringOpen = locationName + ".Loc.XYZ("
+		End If
+
+		'read all the file data into the file content String
+		Dim file_reader As New StreamReader(path)
+		While file_reader.Peek >= 0
+			line = file_reader.ReadLine()
+
+			If (line.IndexOf(targetStringOpen) > 0) Then
+				Dim indexOpen, indexClose As Integer
+				Dim lineSplit() As String
+				Dim preSubString, postSubString As String
+
+				indexOpen = line.IndexOf(targetStringOpen)
+				preSubString = line.Substring(0, indexOpen + targetStringOpen.Length)
+
+				line = line.Substring(indexOpen + targetStringOpen.Length)
+				lineSplit = line.Split(")")
+				postSubString = line.Substring(lineSplit(0).Length)
+
+				line = preSubString + updatedVaraibleDataString + postSubString
+			End If
+
+			enitreFile += line + Chr(GPL_CR)
+		End While
+
+		' Overwrite the old file With the New file data which Is identical except For our changes.
+		Dim file_writer As New StreamWriter(path)
+		file_writer.Write(enitreFile)
+		file_writer.Close()
+	End Sub
+
+End Module

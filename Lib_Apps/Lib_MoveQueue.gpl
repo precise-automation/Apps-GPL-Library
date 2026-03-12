@@ -1,0 +1,142 @@
+'Created: 1/22/2026 3:59 PM
+
+''' <summary>
+''' User Defined Module
+''' </summary>
+Module Lib_MoveQueue
+
+	Public Class MoveQueue
+		Private Dim MoveQueue(30) As RobotMove
+		Public Dim index As Integer = 0
+		Public Dim max As Integer = 29
+		Public Dim size As Integer = 0
+		Public Dim Flip_Lefty As Location
+		Public Dim Flip_Righty As Location
+		Public Dim Flip_Profile As Profile
+		public Dim ErrorOccured As Boolean = False
+		Public Dim RecoveryDelayMs As Integer = 0
+
+		Public Sub New(lefty As Location, righty As Location, profile As Profile)
+			Flip_Lefty = lefty.Clone
+			Flip_Righty = righty.Clone
+			Flip_Profile = profile.Clone
+		End Sub
+
+		Public Sub AddNewMove(l As Location, p As Profile)
+			AddNewMove(l, p, False)
+		End Sub
+
+		Public Sub AddNewMove(l As Location, p As Profile, eom As Boolean)
+			If (ErrorOccured = False) Then
+				MoveQueue(index) = New RobotMove(l, p, eom)
+				If (size < max) Then
+					size += 1
+					index += 1
+				End If
+			End If
+		End Sub
+
+		Public Sub Run(start As Integer)
+			Dim rm As RobotMove
+
+			RobotInit()
+
+			If (start < 0) Then
+				start = 0
+			End If
+
+			For index = start To size -1
+				rm = MoveQueue(index)
+				Dim loc As Location = rm.Loc.Clone
+
+				' Handle Gripper in Joint Moves
+				If (loc.Type = 1) Then
+					loc.Angle(5) = Robot.WhereAngles.Angle(5)
+				End If
+
+				If (ErrorOccured And loc.Type = 0) Then
+					CheckForFlip(loc, rm.Prof)
+					Move.WaitForEOM
+				End If
+
+				Move.Loc(loc, rm.Prof)
+
+				If (rm.WaitForEOM Or ErrorOccured) Then
+					Move.WaitForEOM
+				End If
+
+				ErrorOccured = False
+			Next index
+		End Sub
+
+		Public Sub RunWithRecovery(clear As Boolean)
+			Dim sucess As Boolean = False
+			Dim err As Exception
+			index = 0
+			While (sucess = False)
+				Try
+					RobotInit()
+					Move.WaitForEOM
+					Run(index -1)
+					Move.WaitForEOM
+					sucess = True
+				Catch err
+					Console.WriteLine(err.Message)
+					ErrorOccured = True
+					Thread.Sleep(RecoveryDelayMs)
+				End Try
+			End While
+			ErrorOccured = False
+			If (clear) Then
+				Clear()
+			End If
+		End Sub
+
+		Public Sub Clear
+			Dim ii As Integer
+			For ii = 0 To max
+				MoveQueue(ii) = Nothing
+			Next ii
+			size = 0
+			index = 0
+		End Sub
+
+		Private Sub CheckForFlip(targetLocation As Location, ByVal prof As Profile)
+			'	&H01 = righty
+			Dim currentInRighty As Boolean = Robot.Where.Config And &H01
+			Dim targetInRighty As Boolean = targetLocation.Y > 0
+			
+			Flip_Righty.Angle(5) = Robot.WhereAngles.Angle(5)
+			Flip_Lefty.Angle(5) = Robot.WhereAngles.Angle(5)
+
+			If (targetLocation.Type = 0) Then
+				If (targetInRighty <> currentInRighty) Then
+					If (currentInRighty) Then
+						Move.Loc(Flip_Righty, Flip_Profile)
+						Move.Loc(Flip_Lefty, Flip_Profile)
+					Else
+						Move.Loc(Flip_Lefty, Flip_Profile)
+						Move.Loc(Flip_Righty, Flip_Profile)
+					End If
+				End If
+			End If
+
+			Move.Loc(targetLocation, prof)
+		End Sub
+
+	End Class
+
+	Public Class RobotMove
+		Public Dim Loc As Location
+		Public Dim Prof As Profile
+		Public Dim WaitForEOM As Boolean = False
+		Public Dim complete As Boolean = False
+
+		Public Sub New(l As Location, p As Profile, eom As Boolean)
+			Loc = l.Clone
+			Prof = p.Clone
+			WaitForEOM = eom
+		End Sub
+	End Class
+
+End Module

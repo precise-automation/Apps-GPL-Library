@@ -1,0 +1,85 @@
+'GPL Generated Code.  Please do not manually edit
+'Created: 2/27/2026 1:27:44 PM
+
+Module DefaultMotionProfiles
+  Public PalletFrame As RefFrame
+  Public Frame_Vision_Result As RefFrame
+  Public starting_position As Location
+  Public Vision_Offset As Location
+  Public profile_default As Profile
+  Public profile_default_straight As Profile
+  Public profile_fast_blend As Profile
+
+  Public Sub Init 
+    '<MotionFrame>PalletFrame
+    PalletFrame = New RefFrame
+    PalletFrame.Type = 1
+    PalletFrame.PalletIndex(1) = 1
+    PalletFrame.PalletIndex(2) = 1
+    PalletFrame.PalletIndex(3) = 1
+    PalletFrame.PalletMaxIndex(1) = 1
+    PalletFrame.PalletMaxIndex(2) = 1
+    PalletFrame.PalletMaxIndex(3) = 1
+    PalletFrame.PalletPitch(1) = 0
+    PalletFrame.PalletPitch(2) = 0
+    PalletFrame.PalletPitch(3) = 0
+    PalletFrame.PalletOrder = 0
+    PalletFrame.Loc.XYZ(0,0,0,0,0,0)
+    '</MotionFrame>
+    '<MotionFrame>Frame_Vision_Result
+    Frame_Vision_Result = New RefFrame
+    Frame_Vision_Result.Type = 0
+    Frame_Vision_Result.Loc.XYZ(0,0,0,0,0,0)
+    '</MotionFrame>
+    '<MotionLocation>starting_position
+    starting_position = New Location 
+    starting_position.Type = 0
+    starting_position.XYZ(0,0,0,0,0,0)
+    starting_position.ZWorld = False
+    starting_position.ZClearance = 1E+32
+    starting_position.Config = 0
+    '</MotionLocation>
+    '<MotionLocation>Vision_Offset
+    Vision_Offset = New Location 
+    Vision_Offset.Type = 0
+    Vision_Offset.XYZ(0,0,0,0,0,0)
+    Vision_Offset.ZWorld = False
+    Vision_Offset.ZClearance = 1E+32
+    Vision_Offset.RefFrame = Frame_Vision_Result
+    Vision_Offset.Config = 0
+    '</MotionLocation>
+    '<MotionProfile>profile_default
+    profile_default = New Profile
+    profile_default.Speed = 25
+    profile_default.Speed2 = 0
+    profile_default.Accel = 50
+    profile_default.Decel = 50
+    profile_default.AccelRamp = 0.1
+    profile_default.DecelRamp = 0.1
+    profile_default.Straight = False
+    profile_default.InRange = 10
+    '</MotionProfile>
+    '<MotionProfile>profile_default_straight
+    profile_default_straight = New Profile
+    profile_default_straight.Speed = 100
+    profile_default_straight.Speed2 = 0
+    profile_default_straight.Accel = 75
+    profile_default_straight.Decel = 75
+    profile_default_straight.AccelRamp = 0.1
+    profile_default_straight.DecelRamp = 0.1
+    profile_default_straight.Straight = True
+    profile_default_straight.InRange = 10
+    '</MotionProfile>
+    '<MotionProfile>profile_fast_blend
+    profile_fast_blend = New Profile
+    profile_fast_blend.Speed = 100
+    profile_fast_blend.Speed2 = 0
+    profile_fast_blend.Accel = 75
+    profile_fast_blend.Decel = 75
+    profile_fast_blend.AccelRamp = 0.1
+    profile_fast_blend.DecelRamp = 0.1
+    profile_fast_blend.Straight = False
+    profile_fast_blend.InRange = -1
+    '</MotionProfile>
+  End Sub 
+End Module 

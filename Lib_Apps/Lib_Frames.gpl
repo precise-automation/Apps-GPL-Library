@@ -1,0 +1,50 @@
+'Created: 4/10/2025 11:54 AM
+
+''' <summary>
+''' User Defined Module
+''' </summary>
+Module Lib_Frames
+	''' <summary>
+	''' Calculate a frame of reference using 3 Points (Origin, +X, and +Y points)
+	''' </summary>
+	''' <param name="originPosition">The origin of the frame</param>
+	''' <param name="xPosition">The +X position of the frame</param>
+	''' <param name="yPosition">The +Y position of the frame</param>
+	''' <param name="frame">The frame to calculate</param>
+	Public Sub Frames_CalculateThreePointFrame(ByRef originPosition As Location, ByRef xPosition As Location,  ByVal yPosition As Location, ByRef frame As RefFrame)
+
+		Dim frameLocation As New Location
+		frameLocation.Here3(originPosition, xPosition, yPosition)
+		frame.Loc.XYZ(frameLocation.X, frameLocation.Y, frameLocation.Z, frameLocation.Yaw, frameLocation.Pitch, frameLocation.Roll)
+
+	End Sub
+
+	''' <summary>
+	''' Calculate a frame of reference using two points (Origin and +X points)
+	''' </summary>
+	''' <param name="originPosition">The origin of the frame</param>
+	''' <param name="xPosition">The +X position of the frame</param>
+	''' <param name="frame">The frame to calculate</param>
+	Public Sub Frames_CalculateTwoPointFrame(ByRef originPosition As Location, ByRef xPosition As Location,  ByRef frame As RefFrame)
+
+		' Calculate a +Y position equivalent to the 1D Pallet teach process in GDS
+		Dim offset As Location
+		offset = originPosition.Inverse().Mul(xPosition)
+
+		Dim offset2 As Location
+		Dim temp, tempOffset As Location
+		temp = Location.XYZValue(0,0,0,90,0,0)
+		tempOffset = Location.XYZValue(100, 0, 0)
+		temp = temp.Mul(tempOffset)
+		offset2 = offset.Mul(temp)
+
+		Dim offset3 As Location
+		Dim yPosition As Location
+		yPosition = originPosition.Mul(offset2)
+
+		Dim frameLocation As New Location
+		frameLocation.Here3(originPosition, xPosition, yPosition)
+		frame.Loc.XYZ(frameLocation.X, frameLocation.Y, frameLocation.Z, frameLocation.Yaw, frameLocation.Pitch, frameLocation.Roll)
+
+	End Sub
+End Module

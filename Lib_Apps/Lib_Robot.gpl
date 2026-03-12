@@ -1,0 +1,92 @@
+'Created: 4/8/2025 2:20 PM
+
+''' <summary>
+''' User Defined Module
+''' </summary>
+Module Lib_Robot
+
+	''' <summary>
+	''' Enables high power if needed and homes robot if needed
+	''' </summary>
+	Public Sub RobotInit()
+		While Controller.PowerEnabled = False
+			Controller.PowerEnabled = True
+			Thread.Sleep(250)
+		End While
+
+		If (Not Controller.PDbNum(2800, 1, 0, 1)) Then
+			Robot.HomeAll
+			MsgLogger.LogLine("Robot homing...")
+			Robot.HomeAll
+		End If
+
+		If (Robot.Attached = 0) Then
+			Robot.Attached = 1
+		End If
+
+	End Sub
+
+	Public Sub PrintLocation(name As String, loc As Location, delineator As String)
+		Dim msg As String = GetLocationString(name, loc, delineator)
+		Console.WriteLine(msg)
+	End Sub
+
+	Public Function GetLocationString(name As String, loc As Location, delineator As String) As String
+		Dim msg As String
+		If (name = "") Then
+			msg = name
+		Else
+			msg = name & ": "
+		End If
+
+		If (delineator = "") Then
+			delineator = " "
+		End If
+
+		If (loc.Type = 0) Then
+			msg = msg & CStr(loc.X) & delineator _
+			& CStr(loc.Y) & delineator _
+			& CStr(loc.Z) & delineator _
+			& CStr(loc.Yaw) & delineator _
+			& CStr(loc.Pitch) & delineator _
+			& CStr(loc.Roll)
+		Else
+			Dim ii As Integer
+			For ii = 1 To 12
+				msg = msg & CStr(loc.Angle(ii))
+				If (ii < 12) Then msg = msg & " "
+			Next ii
+		End If
+		Return msg
+	End Function
+
+	Public Sub FreeMode(enable As Boolean)
+		Dim RobState As Double
+		Dim ii, numAxes As Integer
+
+		If enable = False Then
+			If Robot.Attached <> 0 Then
+				Move.StopSpecialModes          ' Terminate jog mode
+				Move.WaitForEOM
+			End If
+		Else
+
+			numAxes = Controller.PdbNum(2000, Robot.Attached, 0, 0)
+
+			' Get Robot Trajectory State
+			RobState = Robot.TrajState(Robot.Attached, 0)
+
+			If RobState <> 10 Then          ' Already in Jog Mode
+				' Start Jog Mode
+				Move.StartJogMode()          ' Initiate jog control mode
+			End If
+
+			For ii = 1 To numAxes
+				Move.SetJogCommand(4, ii, 50) ' Free Mode - All Axes
+				Thread.Sleep(1000)
+			Next
+
+		End If
+	End Sub
+
+End Module

@@ -1,0 +1,51 @@
+'Created: 9/9/2025 2:20 PM
+
+''' <summary>
+''' Apps Advanced Timer Library
+''' </summary>
+Module Lib_AdvancedTimer
+	Public Class AdvancedTimer
+		Public Const TimerCount As Integer = 100
+		Public Label(TimerCount) As String
+
+		Private ellapsedTime(TimerCount) As Double
+		Private startTime(TimerCount), stopTime(TimerCount) As Double
+		Private running(TimerCount) As Boolean
+
+		Public Sub ResetTimer(index As Integer)
+			startTime(index) = 0
+			stopTime(index) = 0
+			ellapsedTime(index) = 0
+			running(index) = False
+		End Sub
+
+		Public Sub StopTimer(index As Integer)
+			stopTime(index) = GetTime()
+			ellapsedTime(index) += stopTime(index) - startTime(index)
+			running(index) = False
+		End Sub
+
+		Public Function GetTime() As Double
+			Return Controller.Timer(1)
+		End Function
+
+		Public Sub StartTimer(index As Integer)
+			startTime(index) = GetTime()
+			running(index) = True
+			stopTime(index) = 0
+		End Sub
+
+		Public Function GetEllapsedTime(index As Integer) As Double
+			If (running(index)) Then
+				Return ellapsedTime(index) + (stopTime(index) - startTime(index))
+			Else
+				Return ellapsedTime(index)
+			End If
+		End Function
+
+		Public Function IsRunning(index As Integer) As Boolean
+			Return running(index)
+		End Function
+
+	End Class
+End Module
