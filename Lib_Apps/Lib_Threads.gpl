@@ -1,0 +1,46 @@
+'Created: 2/17/2026 2:59 PM
+
+''' <summary>
+''' Threads Library v0.2
+''' </summary>
+Module Lib_Threads
+	
+	Const ThreadsState_NeverStarted As Integer = -1
+	Const ThreadsState_CompletedSucess As Integer = 0
+	Const ThreadsState_Stopping As Integer = 1
+	Const ThreadsState_Executing As Integer = 2
+	Const ThreadsState_Paused As Integer = 3
+	Const ThreadsState_Errored As Integer = 4
+
+    'Thread State 
+	' -1 (Never Started)
+	' 0 (Completed Sucess)
+	' 1 (Stopping)
+	' 2 (Executing)
+	' 3 (Paused)
+	' 4 (Errored)
+	
+	''' <summary>
+	''' Restarts target thread if it is not actively executing
+	''' </summary>
+	''' <param name="td">Target Thread</param>
+	Public Sub ThreadsRestartIfNeeded(td As Thread)
+		Dim threadstate As Integer
+		threadstate = td.ThreadState
+		If threadstate <> 2 Then
+			If (threadstate > 0) Then
+				td.Abort
+			End If
+			thread.Sleep(2)
+			td.Start
+		End If
+	End Sub
+	
+	Public Function ThreadsGetCurrentProjectName() As String
+		' Get Current Project Name
+		Dim thread As Thread = Thread.CurrentThread()
+		Dim GplProjectName As String = thread.Project
+		Return GplProjectName
+	End Function
+
+End Module

@@ -1,9 +1,9 @@
 'GPL Generated Code.  Please do not manually edit
-'Created: 2/27/2026 1:27:44 PM
+'Created: 3/30/2026 10:07:41 AM
 
 Module DefaultMotionProfiles
-  Public PalletFrame As RefFrame
   Public Frame_Vision_Result As RefFrame
+  Public PalletFrame As RefFrame
   Public starting_position As Location
   Public Vision_Offset As Location
   Public profile_default As Profile
@@ -11,6 +11,11 @@ Module DefaultMotionProfiles
   Public profile_fast_blend As Profile
 
   Public Sub Init 
+    '<MotionFrame>Frame_Vision_Result
+    Frame_Vision_Result = New RefFrame
+    Frame_Vision_Result.Type = 0
+    Frame_Vision_Result.Loc.XYZ(0,0,0,0,0,0)
+    '</MotionFrame>
     '<MotionFrame>PalletFrame
     PalletFrame = New RefFrame
     PalletFrame.Type = 1
@@ -25,11 +30,6 @@ Module DefaultMotionProfiles
     PalletFrame.PalletPitch(3) = 0
     PalletFrame.PalletOrder = 0
     PalletFrame.Loc.XYZ(0,0,0,0,0,0)
-    '</MotionFrame>
-    '<MotionFrame>Frame_Vision_Result
-    Frame_Vision_Result = New RefFrame
-    Frame_Vision_Result.Type = 0
-    Frame_Vision_Result.Loc.XYZ(0,0,0,0,0,0)
     '</MotionFrame>
     '<MotionLocation>starting_position
     starting_position = New Location 

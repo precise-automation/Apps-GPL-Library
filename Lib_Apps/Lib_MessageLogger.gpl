@@ -1,7 +1,7 @@
 'Created: 2/17/2026 2:44 PM
 
 ''' <summary>
-''' Message Logger v0.3
+''' Message Logger Libary v0.3
 ''' </summary>
 
 Module Lib_MessageLogger

@@ -1,7 +1,7 @@
 'Created: 1/22/2026 3:59 PM
 
 ''' <summary>
-''' User Defined Module
+''' Library of Motion Queuing v0.1
 ''' </summary>
 Module Lib_MoveQueue
 
@@ -55,7 +55,7 @@ Module Lib_MoveQueue
 				End If
 
 				If (ErrorOccured And loc.Type = 0) Then
-					CheckForFlip(loc, rm.Prof)
+					CheckForArnFlipPRRR(loc, rm.Prof)
 					Move.WaitForEOM
 				End If
 
@@ -81,7 +81,7 @@ Module Lib_MoveQueue
 					Move.WaitForEOM
 					sucess = True
 				Catch err
-					Console.WriteLine(err.Message)
+					MsgLogger.LogLine(err.Message)
 					ErrorOccured = True
 					Thread.Sleep(RecoveryDelayMs)
 				End Try
@@ -101,7 +101,7 @@ Module Lib_MoveQueue
 			index = 0
 		End Sub
 
-		Private Sub CheckForFlip(targetLocation As Location, ByVal prof As Profile)
+		Private Sub CheckForArnFlipPRRR(targetLocation As Location, ByVal prof As Profile)
 			'	&H01 = righty
 			Dim currentInRighty As Boolean = Robot.Where.Config And &H01
 			Dim targetInRighty As Boolean = targetLocation.Y > 0

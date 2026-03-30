@@ -1,7 +1,7 @@
 'Created: 2/17/2026 3:10 PM
 
 ''' <summary>
-''' Designed for Modbus large integers v0.1
+''' Modbus Helper Library v0.1
 ''' </summary>
 Module Lib_ModbusHelper
 	Public  Dim ModbusHelperIpAddress As String
@@ -46,7 +46,7 @@ Module Lib_ModbusHelper
 		Try
 			Return (hiDec * 65536) + lowDec
 		Catch err
-			console.WriteLine("Error: ModbusCombineTwoRegisters has overflowed")
+			MsgLogger.LogLine("Error: ModbusCombineTwoRegisters has overflowed")
 			Return -1
 		End Try
 	End Function
@@ -58,7 +58,7 @@ Module Lib_ModbusHelper
 		Try
 			mb.WriteSingleRegister(addr, value)
 		Catch err
-			console.WriteLine(err.Message)
+			MsgLogger.LogLine(err.Message)
 		Finally
 			mb.Close()
 			Thread.Sleep(5)
@@ -74,7 +74,7 @@ Module Lib_ModbusHelper
 		Try
 			mb.ReadHoldingRegisters(addr, 1, val)
 		Catch err
-			console.WriteLine(err.Message)
+			MsgLogger.LogLine(err.Message)
 		Finally
 			mb.Close()
 			Thread.Sleep(5)
