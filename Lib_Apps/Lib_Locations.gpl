@@ -16,7 +16,13 @@ Module Lib_Locations
 		MsgLogger.LogLine(msg)
 	End Sub
 
-	
+	''' <summary>
+	''' Returns a string for displaying locations to the console output
+	''' </summary>
+	''' <param name="name">Optional location name ("" is skipped)</param>
+	''' <param name="loc">Location varaible</param>
+	''' <param name="delineator">Optional locaition deliniator ("" is treated as " ")</param>
+	''' <returns></returns>
 	Public Function LocationGetString(name As String, loc As Location, delineator As String) As String
 		Dim msg As String
 		If (name = "") Then
@@ -216,6 +222,7 @@ Module Lib_Locations
 		Return
 	End Sub
 
+	' Might be able to remove this as Kinesol use the cartesian Config parameter not the optional joint position for lefty vs righty
 	Private Sub FlipArmConfig(ByRef jointPos As location)
 		Dim targetJoint As Integer = 3
 

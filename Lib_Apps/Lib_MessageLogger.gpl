@@ -157,6 +157,10 @@ Module Lib_MessageLogger
 
 	End Class
 
+	''' <summary>
+	''' Delete directory and all sub directories and sub files
+	''' </summary>
+	''' <param name="path">Path to delete (Example: "/ROMDISK/Logs/")</param>
 	Public Sub Directory_DeleteRecersively(path As String)
 		Dim dirs() As String
 		Dim files() As String

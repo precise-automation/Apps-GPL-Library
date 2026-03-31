@@ -12,6 +12,10 @@ Module Lib_AdvancedTimer
 		Private startTime(TimerCount), stopTime(TimerCount) As Double
 		Private running(TimerCount) As Boolean
 
+		''' <summary>
+		''' Reset timer to zero
+		''' </summary>
+		''' <param name="index">Timer Number</param>
 		Public Sub ResetTimer(index As Integer)
 			startTime(index) = 0
 			stopTime(index) = 0
@@ -19,22 +23,39 @@ Module Lib_AdvancedTimer
 			running(index) = False
 		End Sub
 
+		''' <summary>
+		''' Stop timer
+		''' </summary>
+		''' <param name="index">Timer Number</param>
 		Public Sub StopTimer(index As Integer)
 			stopTime(index) = GetTime()
 			ellapsedTime(index) += stopTime(index) - startTime(index)
 			running(index) = False
 		End Sub
 
+		''' <summary>
+		''' Get current controller time
+		''' </summary>
+		''' <returns>time elapsed</returns>
 		Public Function GetTime() As Double
 			Return Controller.Timer(1)
 		End Function
 
+		''' <summary>
+		''' Start timer
+		''' </summary>
+		''' <param name="index">Timer Index</param>
 		Public Sub StartTimer(index As Integer)
 			startTime(index) = GetTime()
 			running(index) = True
 			stopTime(index) = 0
 		End Sub
 
+		''' <summary>
+		''' Get elapsed time in ms
+		''' </summary>
+		''' <param name="index">Timer Index</param>
+		''' <returns>Elapsed Time (ms)</returns>
 		Public Function GetEllapsedTime(index As Integer) As Double
 			If (running(index)) Then
 				Return ellapsedTime(index) + (stopTime(index) - startTime(index))
@@ -43,6 +64,11 @@ Module Lib_AdvancedTimer
 			End If
 		End Function
 
+		''' <summary>
+		''' Get's flag for is timer running
+		''' </summary>
+		''' <param name="index">Timer Index</param>
+		''' <returns>True if the timer is running</returns>
 		Public Function IsRunning(index As Integer) As Boolean
 			Return running(index)
 		End Function

@@ -78,19 +78,23 @@ Public Module Lib_Gripper
 			Return Math.Abs(Robot.WhereAngles.Angle(GripperAxis) - GripperOpenedPosition) < PositionCheckTollerance
 		End Function
 
-		Public Sub CloseGripperWithForce(forcePercent As Integer)
+		''' <summary>
+		''' Performs a two stage force gripper closed
+		''' </summary>
+		''' <param name="finalForcePercent">Starting force as a percentage (Target: 4% to 10%) for 250ms</param>
+		''' <param name="finalForcePercent">Final Force as a percentage (Target: 10-50%) for 500ms</param>
+		Public Sub CloseGripperWithForce(startForcePercent As Integer, finalForcePercent As Integer)
 			Dim torques(12) As Double
-			forcePercent *= -1
 
 			Move.StartTorqueCntrl(Math.Pow(2, GripperAxis), 0, torques)
 
 			' Start Gentile
-			torques(GripperAxis -1) = -7
+			torques(GripperAxis -1) = startForcePercent *-1
 			Move.SetTorques(torques)
 			thread.Sleep(250)
 
 			' Full Force
-			torques(GripperAxis -1) = forcePercent
+			torques(GripperAxis -1) = finalForcePercent *-1
 			Move.SetTorques(torques)
 			thread.Sleep(500)
 
