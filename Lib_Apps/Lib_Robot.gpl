@@ -107,7 +107,7 @@ Module Lib_Robot
 	''' Checks if the current robot has a rotary column (Via ID 116)
 	''' </summary>
 	''' <returns>True if the column rotates</returns>
-	Public Function IsRotaryColumn() As Boolean
+	Public Function RobotHasRotaryColumn() As Boolean
 		Dim KinematicsType As Integer = CInt(Controller.PDbNum(116, 1, 1, 1))
 		
 		If (KinematicsType = 4) Then 'RPRR
@@ -164,5 +164,48 @@ Module Lib_Robot
 
 		Return Controller.PDbNum(targetID, , , axis)
 	End Function
+	
+	Public Sub RobotPerformArmFlip (targetPos As location, prof As Profile)
+		RobotWaitForDecel()
+		Dim startPos As Location = Robot.WhereAngles
+		Dim flipPoint1, flipPoint2, flipPoint3 As Location 
+	
+		Dim joint3Max As Double = RobotGetJointLimits(3, False, True)
+		Dim joint3Min As Double = RobotGetJointLimits(3, True, True)
+		Dim joint3Range As Double = (joint3Max - joint3Min) / 2
+		Dim joint3Mid As Double = joint3Range + joint3Min
+		
+		Dim joint4Max As Double = RobotGetJointLimits(3, False, True)
+		Dim joint4Min As Double = RobotGetJointLimits(3, True, True)
+		Dim joint4Range As Double = (joint4Max - joint4Min) / 2
+		Dim joint4Mid As Double = joint4Range + joint4Min
+		
+		' Center J4 (Joint)
+		flipPoint1 = startPos.Clone()
+		Dim wristSide As Double = joint4Mid -flipPoint1.angle(4)
+		flipPoint1.angle(4) = joint4Mid
+		Move.Loc(flipPoint1, prof)
+		
+		' Flip J3 (Joint)
+		flipPoint2 = flipPoint1.Clone
+		flipPoint2.Angle(3) = (joint3Mid - flipPoint2.Angle(3)) + joint3Mid
+		Dim flip2Cart As Location = targetPos.KineSol(0, flipPoint2)
+		flipPoint2.Angle(3) = flip2Cart.Angle(3)
+		flipPoint2.Angle(4) = flipPoint1.angle(4)
+		Move.Loc(flipPoint2, prof)
+		
+		' Move to new wrist position
+		flipPoint3 = flipPoint2.Clone
+		flipPoint3.Angle(4) = flip2Cart.Angle(4)
+		Move.Loc(flipPoint3, prof)
+		
+		'Move to new final position
+		Move.Loc(targetPos, prof)
+	End Sub
 
+	Public Sub RobotWaitForDecel ()
+		While (Robot.TrajState > 1  And Robot.TrajState < 15) ' Robot accellerating or at constant speed
+			Controller.SleepTick()
+		End While
+	End Sub
 End Module

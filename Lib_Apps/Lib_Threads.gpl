@@ -5,12 +5,12 @@
 ''' </summary>
 Module Lib_Threads
 	
-	Const ThreadsState_NeverStarted As Integer = -1
-	Const ThreadsState_CompletedSucess As Integer = 0
-	Const ThreadsState_Stopping As Integer = 1
-	Const ThreadsState_Executing As Integer = 2
-	Const ThreadsState_Paused As Integer = 3
-	Const ThreadsState_Errored As Integer = 4
+	Public Const ThreadsState_NeverStarted As Integer = -1
+	Public Const ThreadsState_CompletedSucess As Integer = 0
+	Public Const ThreadsState_Stopping As Integer = 1
+	Public Const ThreadsState_Executing As Integer = 2
+	Public Const ThreadsState_Paused As Integer = 3
+	public Const ThreadsState_Errored As Integer = 4
 
     'Thread State 
 	' -1 (Never Started)
