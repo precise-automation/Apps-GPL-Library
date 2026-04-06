@@ -1,7 +1,7 @@
 'Created: 4/10/2025 9:50 AM
 
 ''' <summary>
-''' User Defined Module
+''' Gripper Library v0.1
 ''' </summary>
 Public Module Lib_Gripper
 
@@ -19,13 +19,16 @@ Public Module Lib_Gripper
 		''' <param name="posClosed">Position of J5 when Gripper is Closed</param>
 		''' <param name="gripProf">Profile to use when opening and closing the gripper</param>
 		''' <remarks>changes global camera calibration data structures.</remarks>
-
 		Public Sub New(posOpen As Double, posClosed As Double, gripProf As Profile)
 			GripperOpenedPosition = posOpen
 			GripperClosedPosition = posClosed
 			GripMotionProfile = gripProf
 		End Sub
-
+		
+		''' <summary>
+		''' Quick Gripper Cycle 
+		''' </summary>
+		''' <param name="grip">True is Close, False is Open</param>
 		Public Sub Actuate(grip As Boolean)
 			If (grip) Then
 				Close
@@ -34,46 +37,80 @@ Public Module Lib_Gripper
 			End If
 		End Sub
 
+		''' <summary>
+		''' Quick Gripper Open (via GripperOpenPosition GripMotionProfile)
+		''' </summary>
 		Public Sub Open
 			Actuation(GripperOpenedPosition)
 		End Sub
 
+		''' <summary>
+		''' Quick Gripper Close (via GripperClosePosition GripMotionProfile)
+		''' </summary>
 		Public Sub Close
 			Actuation(GripperClosedPosition)
 		End Sub
 
+		''' <summary>
+		''' Actuate the gripper to a give target position
+		''' </summary>
+		''' <param name="targetPos">Target Position</param>
 		Public Sub Actuation(targetPos As Double)
 			If (Math.Abs(Robot.WhereAngles.Angle(GripperAxis) - targetPos) > PositionCheckTollerance) Then
 				Move.OneAxis(GripperAxis, targetPos, False, GripMotionProfile)
 				Move.WaitForEOM
 			End If
 		End Sub
-
+		
+		''' <summary>
+		''' Checks if the gripper is in the target closed position within a certain tollerance (PositionCheckTollerance)
+		''' </summary>
+		''' <returns>True if in target Closed Position</returns>
 		Public Function IsClosed() As Boolean
 			Return Math.Abs(Robot.WhereAngles.Angle(GripperAxis) - GripperClosedPosition) < PositionCheckTollerance
 		End Function
 
+		''' <summary>
+		''' Checks if the gripper is in the target open position within a certain tollerance (PositionCheckTollerance)
+		''' </summary>
+		''' <returns>True if in target Open Position</returns>
 		Public Function IsOpened() As Boolean
 			Return Math.Abs(Robot.WhereAngles.Angle(GripperAxis) - GripperOpenedPosition) < PositionCheckTollerance
 		End Function
 
-		Public Sub CloseGripperWithForce(forcePercent As Integer)
+		''' <summary>
+		''' Performs a two stage force gripper closed
+		''' </summary>
+		''' <param name="finalForcePercent">Starting force as a percentage (Target: 4% to 10%) for 250ms</param>
+		''' <param name="finalForcePercent">Final Force as a percentage (Target: 10-50%) for 500ms</param>
+		Public Sub CloseGripperWithForce(startForcePercent As Integer, finalForcePercent As Integer)
 			Dim torques(12) As Double
-			forcePercent *= -1
 
-			Move.StartTorqueCntrl(Math.Pow(2,GripperAxis), 0, torques)
+			Move.StartTorqueCntrl(Math.Pow(2, GripperAxis), 0, torques)
 
 			' Start Gentile
-			torques(GripperAxis-1) = -7
+			torques(GripperAxis -1) = startForcePercent *-1
 			Move.SetTorques(torques)
 			thread.Sleep(250)
 
 			' Full Force
-			torques(GripperAxis-1) = forcePercent
+			torques(GripperAxis -1) = finalForcePercent *-1
 			Move.SetTorques(torques)
 			thread.Sleep(500)
 
 			Move.StopSpecialModes
+		End Sub
+
+		''' <summary>
+		''' Move robot to a joint position while ignoring the gripper position.
+		''' </summary>
+		''' <param name="loc">Target Location</param>
+		''' <param name="prof">Motion Profile</param>
+		Public Sub MoveWithoutGripper(loc As Location, prof As profile)
+			If (loc.Type = 1) Then
+				loc.Angle(GripperAxis) = RobotLastCommandedPosition.Angle(GripperAxis)
+			End If
+			Move.Loc(loc, prof)
 		End Sub
 
 	End Class

@@ -1,7 +1,7 @@
 'Created: 2/17/2026 2:44 PM
 
 ''' <summary>
-''' Message Logger v0.3
+''' Message Logger Libary v0.3
 ''' </summary>
 
 Module Lib_MessageLogger
@@ -157,6 +157,10 @@ Module Lib_MessageLogger
 
 	End Class
 
+	''' <summary>
+	''' Delete directory and all sub directories and sub files
+	''' </summary>
+	''' <param name="path">Path to delete (Example: "/ROMDISK/Logs/")</param>
 	Public Sub Directory_DeleteRecersively(path As String)
 		Dim dirs() As String
 		Dim files() As String

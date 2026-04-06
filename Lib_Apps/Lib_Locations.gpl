@@ -1,0 +1,240 @@
+'Created: 3/30/2026 9:59 AM
+
+''' <summary>
+''' Locations Library v0.1
+''' </summary>
+Module Lib_Locations
+	
+	''' <summary>
+	''' Print Location to Message Logger
+	''' </summary>
+	''' <param name="name">Optional Location Name</param>
+	''' <param name="loc">Location Variable</param>
+	''' <param name="delineator">Delineator character string ("," " " ":")</param>
+	Public Sub LocationPrint(name As String, loc As Location, delineator As String)
+		Dim msg As String = LocationGetString(name, loc, delineator)
+		MsgLogger.LogLine(msg)
+	End Sub
+
+	''' <summary>
+	''' Returns a string for displaying locations to the console output
+	''' </summary>
+	''' <param name="name">Optional location name ("" is skipped)</param>
+	''' <param name="loc">Location varaible</param>
+	''' <param name="delineator">Optional locaition deliniator ("" is treated as " ")</param>
+	''' <returns></returns>
+	Public Function LocationGetString(name As String, loc As Location, delineator As String) As String
+		Dim msg As String
+		If (name = "") Then
+			msg = name
+		Else
+			msg = name & ": "
+		End If
+
+		If (delineator = "") Then
+			delineator = " "
+		End If
+
+		If (loc.Type = 0) Then
+			msg = msg & CStr(loc.X) & delineator _
+			& CStr(loc.Y) & delineator _
+			& CStr(loc.Z) & delineator _
+			& CStr(loc.Yaw) & delineator _
+			& CStr(loc.Pitch) & delineator _
+			& CStr(loc.Roll)
+		Else
+			Dim ii As Integer
+			For ii = 1 To 12
+				msg = msg & CStr(loc.Angle(ii))
+				If (ii < 12) Then msg = msg & " "
+			Next ii
+		End If
+		Return msg
+	End Function
+	
+	
+	''' <summary>
+	''' Updates a Location Variable in the GPO File on the flash version of the program
+	''' <param name="locationName"> Name of the location varaible </param> 
+	''' <param name="updatedLocation"> Updated value of the location varaible </param> 
+	''' <paramref name="isRefFrame"> Is A Reference Frame </param>
+	''' </summary>
+	Public Sub LocationUpdateGpoFileVariable(locationName As String, updatedLocation As Location, isRefFrame As Boolean)
+		Dim GplProjectName As String = ThreadsGetCurrentProjectName()
+		Dim path As String = "/flash/projects/" + GplProjectName + "/GModule.gpo"
+		Dim enitreFile As String
+		Dim line As String
+
+		' Make sure location is cartesian
+		If (updatedLocation.Type <> 0) Then
+			Dim Err As New Exception
+			err.Message = "Location is of joint type"
+			err.ErrorCode = -1337
+			Throw err
+		End If
+
+		'create the new string to replace the old data in the gmodule file
+		Dim updatedVaraibleDataString As String
+		updatedVaraibleDataString = CStr(updatedLocation.X) + ","
+		updatedVaraibleDataString += CStr(updatedLocation.Y) + ","
+		updatedVaraibleDataString += CStr(updatedLocation.Z) + ","
+		updatedVaraibleDataString += CStr(updatedLocation.Yaw) + ","
+		updatedVaraibleDataString += CStr(updatedLocation.Pitch) + ","
+		updatedVaraibleDataString += CStr(updatedLocation.Roll)
+
+		Dim targetStringOpen As String
+		If (isRefFrame = False) Then
+			targetStringOpen = locationName + ".XYZ("
+		Else
+			targetStringOpen = locationName + ".Loc.XYZ("
+		End If
+
+		'read all the file data into the file content String
+		Dim file_reader As New StreamReader(path)
+		While file_reader.Peek >= 0
+			line = file_reader.ReadLine()
+
+			If (line.IndexOf(targetStringOpen) > 0) Then
+				Dim indexOpen, indexClose As Integer
+				Dim lineSplit() As String
+				Dim preSubString, postSubString As String
+
+				indexOpen = line.IndexOf(targetStringOpen)
+				preSubString = line.Substring(0, indexOpen + targetStringOpen.Length)
+
+				line = line.Substring(indexOpen + targetStringOpen.Length)
+				lineSplit = line.Split(")")
+				postSubString = line.Substring(lineSplit(0).Length)
+
+				line = preSubString + updatedVaraibleDataString + postSubString
+			End If
+
+			enitreFile += line + Chr(GPL_CR)
+		End While
+
+		' Overwrite the old file With the New file data which Is identical except For our changes.
+		Dim file_writer As New StreamWriter(path)
+		file_writer.Write(enitreFile)
+		file_writer.Close()
+	End Sub
+
+
+
+	''' <summary>
+	''' Check if the location is in range
+	''' </summary>
+	''' <param name="targetLoc">The location to check</param>
+	''' <param name="refenceLoc">The location to check</param>
+	''' <returns>True if the position is in range of the robot in the desired configuration</returns>
+	Public Function LocationsInRange(ByVal targetLoc As Location, ByVal refenceLoc As Location) As Boolean
+		Dim check As Location = targetLoc.Pos()
+		Dim isInRange As Boolean = True
+		Dim ex As Exception
+		Try
+			' Convert the location. If this is Cartesian it will be converted to
+			' a joint location. If there is an out of range issue, an exception is 
+			' thrown
+			check = check.KineSol(0, refenceLoc)
+
+			' If we converted from joint to Cartesian, then convert back.
+			' The conversion back will detect for an out of range error
+			If check.Type = 0 Then
+				check = check.KineSol(0, refenceLoc)
+			End If
+		Catch ex
+			isInRange = False
+		End Try
+
+		Return isInRange
+	End Function
+
+	''' <summary>
+	''' Provides needed changes in order for location to be in range
+	''' </summary>
+	''' <param name="targetLoc">Target location to move to in Cartesian</param>
+	''' <param name="refenceLoc">Target location to move to in Joint</param>
+	''' <param name="possible">Flag set TRUE if location can be made to be within range</param>
+	''' <param name="flipArmNeeded">Flag set TRUE if Arm Config Flip is needed</param>
+	''' <param name="railMoveNeeded">Flag set TRUE if Rail needs to move positions</param>
+	''' <param name="newRailPos">Rail position to make position in range</param>
+	Public Sub LocationsInRangeExteneded(ByVal targetLoc As Location, ByVal refenceLoc As Location, ByRef possible As Boolean, _
+		ByRef flipArmNeeded As Boolean, ByRef railMoveNeeded As Boolean, ByRef newRailPos As Double)
+
+		Dim orgRefrenceLoc As Location = refenceLoc.Clone()
+		flipArmNeeded = False
+		railMoveNeeded = False
+		possible = True
+		If (RobotHasRail) Then
+			newRailPos = refenceLoc.Angle(RobotRailAxis)
+		Else
+			newRailPos = 0
+		End If
+
+		' If arm is already in range
+		If LocationsInRange(targetLoc, refenceLoc) Then Return
+		
+		' Check if flip is needed
+		FlipArmConfig(refenceLoc)
+		flipArmNeeded = True
+		If LocationsInRange(targetLoc, refenceLoc) Then ' Found solution
+			Return
+		End If
+		
+		' If arm has a rail
+		If RobotHasRail Then
+			railMoveNeeded = True
+			Dim axis As Integer = RobotRailAxis
+			Dim maxRail As Double = RobotGetJointLimits(axis, False, True)-2
+			Dim minRail As Double = RobotGetJointLimits(axis, True, True)+2
+			refenceLoc = orgRefrenceLoc.Clone
+			flipArmNeeded = False
+
+			If (targetLoc.Type = 1) Then 'Target Locating in Joint Space
+				newRailPos = targetLoc.Angle(RobotRailAxis)
+			ElseIf (RobotRailInX()) Then ' Rail oriented along x axis
+				newRailPos = targetLoc.X
+			Else ' Rail Oriented along Y axis
+				newRailPos = targetLoc.Y
+			End If
+
+
+			newRailPos = Math.Max(Math.Min(newRailPos, maxRail), minRail) 'Limit to rail range
+			refenceLoc.Angle(RobotRailAxis) = newRailPos
+			
+			' Check if rail is needed
+			If LocationsInRange(targetLoc, refenceLoc) Then ' Found solution
+				Return
+			End If
+			
+			' Check if flip and rail is needed
+			FlipArmConfig(refenceLoc)
+			flipArmNeeded = True
+			If LocationsInRange(targetLoc, refenceLoc) Then ' Found solution
+				Return
+			End If
+		End If
+		
+		' No solution found
+		possible = False
+		flipArmNeeded = False
+		railMoveNeeded = False
+		newRailPos = 0
+		Return
+	End Sub
+
+	' Might be able to remove this as Kinesol use the cartesian Config parameter not the optional joint position for lefty vs righty
+	Private Sub FlipArmConfig(ByRef jointPos As location)
+		Dim targetJoint As Integer = 3
+
+		Dim jointMax As Double = RobotGetJointLimits(targetJoint, False, True)
+		Dim jointMin As Double = RobotGetJointLimits(targetJoint, True, True)
+		Dim jointRange As Double = (jointMax - jointMin) / 2
+		Dim jointMid As Double = jointRange + jointMin
+
+		If (jointPos.Angle(targetJoint) <jointMid) Then ' Righty
+			jointPos.Angle(targetJoint) = jointMid + (jointRange / 2) ' Force it to Lefty
+		Else
+			jointPos.Angle(targetJoint) = jointMid - (jointRange / 2) ' Force it to Righty
+		End If
+	End Sub
+End Module

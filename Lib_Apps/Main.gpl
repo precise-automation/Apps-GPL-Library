@@ -4,15 +4,33 @@
 ''' User Defined Module
 ''' </summary>
 Module Lib_Apps
-	Public Const Vers As String = "Lib_Apps-0.0.4"
+	Public Const Vers As String = "Lib_Apps-0.0.5"
 	Public Dim MsgLogger As MessageLogger
+	
+	Public Sub Lib_Apps_Init()
+		Console.WriteLine(Vers)
+		Thread.CurrentThread.Abort()
+	End Sub
 
     ''' <summary>
-    ''' Main entry point for the module
+    ''' InitVariables
     ''' </summary>
-    Public Sub Lib_Apps_Init
-		Console.WriteLine(Vers)
+    ''' <param name="axisGripper">Axis Number for Gripper</param>
+    ''' <param name="axisRail">Axis Number for Rail</param>
+    Public Sub Lib_Apps_Init(axisGripper As Integer, axisRail As Integer)
 		MsgLogger = New MessageLogger()
+		MsgLogger.LogLine(Vers)
+		
+		RobotGripperAxis = axisGripper
+		RobotRailAxis = axisRail
+		
+		If(axisGripper > 0) Then
+			RobotHasGripper = True
+		End If
+		
+		If(axisRail > 0) Then
+			RobotHasRail = true
+		End If
     End Sub 
 
 End Module

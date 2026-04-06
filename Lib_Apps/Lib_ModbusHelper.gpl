@@ -1,11 +1,17 @@
 'Created: 2/17/2026 3:10 PM
 
 ''' <summary>
-''' Designed for Modbus large integers v0.1
+''' Modbus Helper Library v0.1
 ''' </summary>
 Module Lib_ModbusHelper
 	Public  Dim ModbusHelperIpAddress As String
 
+	''' <summary>
+	''' Splits a larger value into two smaller values that can fit in two regiseters
+	''' </summary>
+	''' <param name="value">Input Value</param>
+	''' <param name="hiDec">Output High Portion</param>
+	''' <param name="loDec">Output Low Portion</param>
 	Public Sub ModbusSplitValue(value As Double, ByRef hiDec As Integer, ByRef loDec As Integer)
 		' Scale to whole number using numeric math.
 		' For this specific value, multiply by 1000 is exact enough; then round to nearest integer.
@@ -22,6 +28,11 @@ Module Lib_ModbusHelper
 		'reconstructed = hiDec * 65536 + loDec           ' -> 1401688
 	End Sub
 
+	''' <summary>
+	''' Reads two registers and combines their values into a single value
+	''' </summary>
+	''' <param name="addr">Address of the start of the register, should contain the High Value</param>
+	''' <returns></returns>
 	Public Function ModbusReadDualRegister(addr As Integer) As Integer
 		Dim valHigh, valLow As Integer
 
@@ -32,6 +43,11 @@ Module Lib_ModbusHelper
 		Return ModbusCombineTwoRegisters(valHigh, valLow)
 	End Function
 
+	''' <summary>
+	''' Writes a value across two regiseters
+	''' </summary>
+	''' <param name="addr">Starting address (High Value)</param>
+	''' <param name="value">Value to Write</param>
 	Public Sub ModbusWriteDualRegister(addr As Integer, value As Integer)
 		Dim valHigh, valLow As Integer
 
@@ -41,16 +57,27 @@ Module Lib_ModbusHelper
 		Thread.Sleep(50)
 	End Sub
 
+	''' <summary>
+	''' Combines two values into one by multiplying the high half by 65536 and adding it to the lower half
+	''' </summary>
+	''' <param name="hiDec">High value</param>
+	''' <param name="lowDec">Low value</param>
+	''' <returns></returns>
 	Public Function ModbusCombineTwoRegisters(ByRef hiDec As Integer, ByRef lowDec As Integer) As Integer
 		Dim err As Exception
 		Try
 			Return (hiDec * 65536) + lowDec
 		Catch err
-			console.WriteLine("Error: ModbusCombineTwoRegisters has overflowed")
+			MsgLogger.LogLine("Error: ModbusCombineTwoRegisters has overflowed")
 			Return -1
 		End Try
 	End Function
 
+	''' <summary>
+	''' Opens IP End Point and writes a single value into a single register
+	''' </summary>
+	''' <param name="addr">Modbus Register Address</param>
+	''' <param name="value">Value to be written</param>
 	Public Sub ModbusWrite(addr As Integer, value As Integer)
 		Dim err As Exception
 		Dim ep As New IPEndPoint(ModbusHelperIpAddress)
@@ -58,13 +85,18 @@ Module Lib_ModbusHelper
 		Try
 			mb.WriteSingleRegister(addr, value)
 		Catch err
-			console.WriteLine(err.Message)
+			MsgLogger.LogLine(err.Message)
 		Finally
 			mb.Close()
 			Thread.Sleep(5)
 		End Try
 	End Sub
 
+	''' <summary>
+	''' Read a modbus register
+	''' </summary>
+	''' <param name="addr">Address to read from</param>
+	''' <returns>Value contained in the register</returns>
 	Public Function ModbusRead(addr As Integer) As Integer
 		Dim err As Exception
 		Dim val() As Integer
@@ -74,7 +106,7 @@ Module Lib_ModbusHelper
 		Try
 			mb.ReadHoldingRegisters(addr, 1, val)
 		Catch err
-			console.WriteLine(err.Message)
+			MsgLogger.LogLine(err.Message)
 		Finally
 			mb.Close()
 			Thread.Sleep(5)

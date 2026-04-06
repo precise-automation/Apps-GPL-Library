@@ -1,5 +1,5 @@
 ''' <summary>
-''' Datalogger Classes
+''' Datalogger Library v0.3
 ''' </summary>
 Module Lib_DataLogger
 
@@ -213,7 +213,7 @@ Module Lib_DataLogger
 
 			cmd = "Datalog 0, """ & newFile & """"
 
-			Console.WriteLine(controller.Command(cmd))
+			MsgLogger.LogLine(controller.Command(cmd))
 			Return newFile
 		End Function
 
