@@ -4,7 +4,7 @@
 ''' User Defined Module
 ''' </summary>
 Module Lib_Apps
-	Public Const Vers As String = "Lib_Apps-0.0.5"
+	Public Const Vers As String = "Lib_Apps-0.1"
 	Public Dim MsgLogger As MessageLogger
 	
 	Public Sub Lib_Apps_Init()

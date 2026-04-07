@@ -1,7 +1,7 @@
 'Created: 4/8/2025 2:20 PM
 
 ''' <summary>
-''' Robot Library v0.3
+''' Robot Library v0.4
 ''' </summary>
 Module Lib_Robot
 
@@ -9,17 +9,17 @@ Module Lib_Robot
 	''' Flag set True if Robot has installed optional gripper (Flag set by user)
 	''' </summary>
 	Public Dim RobotHasGripper As Boolean = False
-	
+
 	''' <summary>
 	''' Axis which controls the gripper
 	''' </summary>
 	Public Dim RobotGripperAxis As Integer = 0
-	
+
 	''' <summary>
 	''' Flag set True if Robot has installed optional rail (Flag set by user)
 	''' </summary>
 	Public Dim RobotHasRail As Boolean = False
-	
+
 	''' <summary>
 	''' Axis which controls the rail
 	''' </summary>
@@ -87,11 +87,11 @@ Module Lib_Robot
 		Dim loc As New Location
 		Dim ii As Integer
 		loc.Type = 1
-		
+
 		For ii = 1 To RobotNumberOfAxis()
 			loc.Angle(ii) = Controller.PDbNum(3501, 1, 1, ii)
 		Next ii
-		
+
 		Return loc
 	End Function
 
@@ -109,7 +109,7 @@ Module Lib_Robot
 	''' <returns>True if the column rotates</returns>
 	Public Function RobotHasRotaryColumn() As Boolean
 		Dim KinematicsType As Integer = CInt(Controller.PDbNum(116, 1, 1, 1))
-		
+
 		If (KinematicsType = 4) Then 'RPRR
 			Return True
 		ElseIf (KinematicsType = 12) Then 'PRRR
@@ -121,15 +121,15 @@ Module Lib_Robot
 			Throw err
 		End If
 	End Function
-	
+
 	''' <summary>
 	''' Returns robot optional linear rail orientation (-90 = x-axis, 0=y-axis) 
 	''' </summary>
 	''' <returns>Rail Orientation (-90 = x-axis, 0=y-axis)</returns>
 	Public Function RobotRailOrientation() As Double
-		Return CInt(Controller.PDbNum(16050,,,5))
+		Return CInt(Controller.PDbNum(16050, , , 5))
 	End Function
-	
+
 	''' <summary>
 	''' Helper function to return if rail is in X axis vs Y axis
 	''' </summary>
@@ -164,28 +164,33 @@ Module Lib_Robot
 
 		Return Controller.PDbNum(targetID, , , axis)
 	End Function
-	
-	Public Sub RobotPerformArmFlip (targetPos As location, prof As Profile)
+
+	''' <summary>
+	''' Flip arm from lefty to right or right to left
+	''' </summary>
+	''' <param name="targetPos">Target Position</param>
+	''' <param name="prof">Motion Profile</param>
+	Public Sub RobotPerformArmFlip(targetPos As location, prof As Profile)
 		RobotWaitForDecel()
 		Dim startPos As Location = Robot.WhereAngles
-		Dim flipPoint1, flipPoint2, flipPoint3 As Location 
-	
+		Dim flipPoint1, flipPoint2, flipPoint3 As Location
+
 		Dim joint3Max As Double = RobotGetJointLimits(3, False, True)
 		Dim joint3Min As Double = RobotGetJointLimits(3, True, True)
 		Dim joint3Range As Double = (joint3Max - joint3Min) / 2
 		Dim joint3Mid As Double = joint3Range + joint3Min
-		
+
 		Dim joint4Max As Double = RobotGetJointLimits(3, False, True)
 		Dim joint4Min As Double = RobotGetJointLimits(3, True, True)
 		Dim joint4Range As Double = (joint4Max - joint4Min) / 2
 		Dim joint4Mid As Double = joint4Range + joint4Min
-		
+
 		' Center J4 (Joint)
 		flipPoint1 = startPos.Clone()
-		Dim wristSide As Double = joint4Mid -flipPoint1.angle(4)
+		Dim wristSide As Double = joint4Mid - flipPoint1.angle(4)
 		flipPoint1.angle(4) = joint4Mid
 		Move.Loc(flipPoint1, prof)
-		
+
 		' Flip J3 (Joint)
 		flipPoint2 = flipPoint1.Clone
 		flipPoint2.Angle(3) = (joint3Mid - flipPoint2.Angle(3)) + joint3Mid
@@ -193,19 +198,78 @@ Module Lib_Robot
 		flipPoint2.Angle(3) = flip2Cart.Angle(3)
 		flipPoint2.Angle(4) = flipPoint1.angle(4)
 		Move.Loc(flipPoint2, prof)
-		
+
 		' Move to new wrist position
 		flipPoint3 = flipPoint2.Clone
 		flipPoint3.Angle(4) = flip2Cart.Angle(4)
 		Move.Loc(flipPoint3, prof)
-		
+
 		'Move to new final position
 		Move.Loc(targetPos, prof)
 	End Sub
 
-	Public Sub RobotWaitForDecel ()
-		While (Robot.TrajState > 1  And Robot.TrajState < 15) ' Robot accellerating or at constant speed
+	''' <summary>
+	''' Wait for robot trajectory to be decelerating
+	''' </summary>
+	Public Sub RobotWaitForDecel()
+		While (Robot.TrajState > 1 And Robot.TrajState < 15) ' Robot accellerating or at constant speed
 			Controller.SleepTick()
 		End While
 	End Sub
+
+	''' <summary>
+	''' Move to a location with motion recovery
+	''' </summary>
+	''' <param name="loc">Taret Destination</param>
+	''' <param name="prof">Motion Profile</param>
+	''' <param name="recoveryProfile">Recovery Motion Profile</param>
+	''' <param name="MaxRetry">Max Retries</param>
+	Public Sub MoveWithRecovery(loc As Location, prof As Profile, WaitForEndOfMotion As Boolean, recoveryProfile As Profile, MaxRetry As Integer)
+		Dim err As Exception
+		Dim start, crash_robot, crash_dest As Location
+		Dim crash As Boolean = False
+		Dim retry As Integer = 0
+
+		start = Robot.WhereAngles
+
+		While retry <= MaxRetry
+			Try
+				RobotInit
+				If (crash) Then
+					If (retry = MaxRetry) Then
+						Move.Loc(start, recoveryProfile)
+						Move.WaitForEOM
+					Else
+						Move.Loc(crash_robot, recoveryProfile)
+						Move.WaitForEOM
+					End If
+					crash = False
+				End If
+
+				Move.Loc(loc, prof)
+				If (crash Or WaitForEndOfMotion) Then
+					Move.WaitForEOM
+				End If
+				crash = False
+				Return
+			Catch err
+				If (retry = 0) Then
+					crash_robot = RobotLastCommandedPosition()
+					crash_dest = Robot.DestAngles
+				End If
+				crash = True
+				Thread.Sleep(1000)
+			End Try
+			retry += 1
+		End While
+
+		' Number of retries exceeded
+		Throw err
+	End Sub
+	
+	' Simplification Wrapper
+	Public Sub MoveWithRecovery(loc As Location, prof As Profile)
+		MoveWithRecovery(loc, prof, True, profile_default, 3)	
+	End Sub
+
 End Module
