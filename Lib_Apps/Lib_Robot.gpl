@@ -33,6 +33,11 @@ Module Lib_Robot
 			Controller.PowerEnabled = True
 			Thread.Sleep(250)
 		End While
+		
+		While(Not Controller.PDbNum(215) = 0) 
+			Controller.PDbNum(215) = 0
+			Thread.Sleep(250)
+		End While
 
 		If (Not Controller.PDbNum(2800, 1, 0, 1)) Then
 			Robot.HomeAll

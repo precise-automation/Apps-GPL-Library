@@ -1,5 +1,5 @@
 'GPL Generated Code.  Please do not manually edit
-'Created: 3/30/2026 10:07:41 AM
+'Created: 5/1/2026 9:05:59 AM
 
 Module DefaultMotionProfiles
   Public Frame_Vision_Result As RefFrame
@@ -9,6 +9,7 @@ Module DefaultMotionProfiles
   Public profile_default As Profile
   Public profile_default_straight As Profile
   Public profile_fast_blend As Profile
+  Public profile_default_blended As Profile
 
   Public Sub Init 
     '<MotionFrame>Frame_Vision_Result
@@ -61,7 +62,7 @@ Module DefaultMotionProfiles
     '</MotionProfile>
     '<MotionProfile>profile_default_straight
     profile_default_straight = New Profile
-    profile_default_straight.Speed = 100
+    profile_default_straight.Speed = 25
     profile_default_straight.Speed2 = 0
     profile_default_straight.Accel = 75
     profile_default_straight.Decel = 75
@@ -80,6 +81,17 @@ Module DefaultMotionProfiles
     profile_fast_blend.DecelRamp = 0.1
     profile_fast_blend.Straight = False
     profile_fast_blend.InRange = -1
+    '</MotionProfile>
+    '<MotionProfile>profile_default_blended
+    profile_default_blended = New Profile
+    profile_default_blended.Speed = 25
+    profile_default_blended.Speed2 = 0
+    profile_default_blended.Accel = 50
+    profile_default_blended.Decel = 50
+    profile_default_blended.AccelRamp = 0.1
+    profile_default_blended.DecelRamp = 0.1
+    profile_default_blended.Straight = False
+    profile_default_blended.InRange = 10
     '</MotionProfile>
   End Sub 
 End Module 
