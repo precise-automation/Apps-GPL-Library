@@ -1,0 +1,79 @@
+'Created: 7/24/2026 3:20 PM
+
+''' <summary>
+''' User Defined Module
+''' </summary>
+Module Lib_RobotConts
+
+	Public Const DataID_RobotModel As Integer = 2007
+	Public Const DataID_RobotModel2 As Integer = 2008
+	Public Const DataID_RobotKinematics As Integer = 116
+	
+	Public Const Const_Kin_PPR As Integer = 9
+	Public Const Const_Kin_PRRR As Integer = 12
+	Public Const Const_Kin_RPRR As Integer = 4
+	Public Const Const_Kin_RPRRRR As Integer = 22
+	
+	Public Const Const_Gripper_23 As Integer = 0
+	
+'	Public Sub LoadRobotModels
+'		RobotModels(1) = New RobotDef("100",9, 200, 0)
+'		RobotModels(2) = New RobotDef("400", 12, 400, 0)
+'		RobotModels(3) = New RobotDef("3400", 12, 400, 1)
+'		RobotModels(3) = New RobotDef("c3", 12, 1000, 2)
+'		RobotModels(4) = New RobotDef("c5", 4, 1000, 6)
+'		RobotModels(5) = New RobotDef("DD6", 22, 1000, 0)
+'		RobotModels(6) = New RobotDef("c8A", 22, 1000, 2)
+'		RobotModels(7) = New RobotDef("DD4", 4, 1000, 0)
+'		RobotModels(8) = New RobotDef("c10", 4, 1000, 2)
+'	End Sub
+	
+	Public Function isPF100() As Boolean
+		Return CheckModel(9, 200, 0)
+	End Function
+	
+	Public Function isPF400() As Boolean
+		Return CheckModel(12, 400, 0)
+	End Function
+	
+	Public Function isPF3400() As Boolean
+		Return CheckModel(12, 400, 1)
+	End Function
+	
+	Public Function isC3() As Boolean
+		Return CheckModel(12, 1000, 2)
+	End Function
+	
+	Public Function isC5() As Boolean
+		Return CheckModel(4, 1000,6)
+	End Function
+	
+	Public Function isC8A() As Boolean
+		Return CheckModel(22, 1000,2)
+	End Function
+	
+	Public Function isC10() As Boolean
+		Return CheckModel(4, 1000,2)
+	End Function
+	
+	Public Function isDD4() As Boolean
+		Return CheckModel(4, 1000,0)
+	End Function
+	
+	Public Function isDD6() As Boolean
+		Return CheckModel(22, 1000,0)
+	End Function
+	
+	Public Function CheckModel(kin As Integer, model1 As Integer, model2 As Integer) as Boolean
+		Dim hw_Kin As Integer = Controller.PDbNum(DataID_RobotKinematics)
+		Dim hw_Model1 As Integer = Controller.PDbNum(DataID_RobotModel)
+		Dim hw_Model2 As Integer = Controller.PDbNum(DataID_RobotModel2)
+		
+		If(hw_Kin = kin And hw_Model1 = model1 And hw_Model2 = model2) Then
+			Return True
+		End If
+		
+		Return False
+	End Function	
+
+End Module

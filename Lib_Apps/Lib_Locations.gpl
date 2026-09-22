@@ -237,6 +237,33 @@ Module Lib_Locations
 			jointPos.Angle(targetJoint) = jointMid - (jointRange / 2) ' Force it to Righty
 		End If
 	End Sub
+	
+	''' <summary>
+	''' Two Part Approach or Depart of a location
+	''' </summary>
+	''' <param name="isAppro">Set Motion Order (True for Approach and False for Depart)</param>
+	''' <param name="finalLocation">Target location to move to in Cartesian Space</param>
+	''' <param name="approWorld">Approach Offset (World Space)</param>
+	''' <param name="approTool">Approach Offset (Tool Space)</param>
+	''' <param name="motionProfile">Motion Profile</param>
+	Public Sub ApproDepart(isAppro As Boolean, finalLocation As Location, approWorld As Double, approTool As Double, motionProfile As Profile)
+		Dim appro As Location = finalLocation.Clone
+		Dim prof_straight As Profile = motionProfile.Clone
+		appro.ZClearance = approTool
+		appro.ZWorld = False
+		appro.Z += approWorld
+		prof_straight.Straight = True
+
+		If (isAppro) Then
+			Move.Approach(appro, motionProfile)
+			Move.Loc(appro, prof_straight)
+			Move.Loc(finalLocation, prof_straight)
+		Else
+			Move.Loc(finalLocation, prof_straight)
+			Move.Loc(appro, prof_straight)
+			Move.Approach(appro, prof_straight)
+		End If
+	End Sub
 
 	Public Sub MoveApproZ(location As Location, profile As Profile, ApproZOffset As Double)
 		Dim a As Location = CalcApproZ(location, ApproZOffset)
