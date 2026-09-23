@@ -1,15 +1,23 @@
 'Created: 4/10/2025 9:42 AM
+'Updated: 9/23/2026
 
 ''' <summary>
-''' User Defined Module
+''' Main Module
 ''' </summary>
 Module Lib_Apps
-	Public Const Vers As String = "Lib_Apps-0.2"
+	Public Const Vers As String = "Lib_Apps-0.3"
 	Public Dim MsgLogger As MessageLogger
 	
 	Public Sub Lib_Apps_Init()
 		Console.WriteLine(Vers)
+		Console.WriteLine("Error: This is a library project. Do not run this project directly.")
 		Thread.CurrentThread.Abort()
+	End Sub
+	
+	Public Sub AppsLibInit()
+		MsgLogger = New MessageLogger()
+		MsgLogger.LogLine(Vers)
+		GetDetails_PRRR(1)
 	End Sub
 
     ''' <summary>

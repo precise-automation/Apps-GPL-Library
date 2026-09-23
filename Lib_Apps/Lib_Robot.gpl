@@ -6,26 +6,6 @@
 Module Lib_Robot
 
 	''' <summary>
-	''' Flag set True if Robot has installed optional gripper (Flag set by user)
-	''' </summary>
-	Public Dim RobotHasGripper As Boolean = False
-
-	''' <summary>
-	''' Axis which controls the gripper
-	''' </summary>
-	Public Dim RobotGripperAxis As Integer = 0
-
-	''' <summary>
-	''' Flag set True if Robot has installed optional rail (Flag set by user)
-	''' </summary>
-	Public Dim RobotHasRail As Boolean = False
-
-	''' <summary>
-	''' Axis which controls the rail
-	''' </summary>
-	Public Dim RobotRailAxis As Integer = 0
-
-	''' <summary>
 	''' Enables high power if needed and homes robot if needed
 	''' </summary>
 	Public Sub RobotInit()

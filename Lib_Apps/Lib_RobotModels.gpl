@@ -1,79 +1,315 @@
-'Created: 7/24/2026 3:20 PM
 
 ''' <summary>
-''' User Defined Module
+''' Robot Model Information Lookup
+''' 9/23/2026
 ''' </summary>
-Module Lib_RobotConts
+Module Lib_RobotModels
 
-	Public Const DataID_RobotModel As Integer = 2007
-	Public Const DataID_RobotModel2 As Integer = 2008
-	Public Const DataID_RobotKinematics As Integer = 116
+	Private Const Const_Kin_PPR As Integer = 9
+	Private Const Const_Kin_PRRR As Integer = 12
+	Private Const Const_Kin_RPRR As Integer = 4
+	Private Const Const_Kin_RPRRRR As Integer = 22
+	Private Const ROB_PF3400 As Integer = 1
+	Private Const ROB_CSERIES As Integer = 2
+	Private Const ROB_C5 As Integer = 4 
+
+	Public Dim RobotName As String = ""
 	
-	Public Const Const_Kin_PPR As Integer = 9
-	Public Const Const_Kin_PRRR As Integer = 12
-	Public Const Const_Kin_RPRR As Integer = 4
-	Public Const Const_Kin_RPRRRR As Integer = 22
-	
-	Public Const Const_Gripper_23 As Integer = 0
-	
-'	Public Sub LoadRobotModels
-'		RobotModels(1) = New RobotDef("100",9, 200, 0)
-'		RobotModels(2) = New RobotDef("400", 12, 400, 0)
-'		RobotModels(3) = New RobotDef("3400", 12, 400, 1)
-'		RobotModels(3) = New RobotDef("c3", 12, 1000, 2)
-'		RobotModels(4) = New RobotDef("c5", 4, 1000, 6)
-'		RobotModels(5) = New RobotDef("DD6", 22, 1000, 0)
-'		RobotModels(6) = New RobotDef("c8A", 22, 1000, 2)
-'		RobotModels(7) = New RobotDef("DD4", 4, 1000, 0)
-'		RobotModels(8) = New RobotDef("c10", 4, 1000, 2)
-'	End Sub
-	
+	Public Dim RobotHasExtendedReach As Boolean = True
+
+	Public Dim RobotHasGripper As Boolean = False
+	Public Dim RobotGripperAxis As Integer = 0
+	Public Dim RobotHasDualGripper As Boolean = False
+	Public Dim RobotDualGripperAxis As Integer = 0
+	Public Dim RobotHas23NGripper As Boolean = False
+
+	Public Dim RobotHasRail As Boolean = False
+	Public Dim RobotRailAxis As Integer = 0
+	Public Dim RobotRailAxisOrientation As Integer = 0
+
+	Public Dim RobotVerticalAxis As Integer = 1 ' Base 1
+
 	Public Function isPF100() As Boolean
 		Return CheckModel(9, 200, 0)
 	End Function
-	
+
 	Public Function isPF400() As Boolean
 		Return CheckModel(12, 400, 0)
 	End Function
-	
+
 	Public Function isPF3400() As Boolean
 		Return CheckModel(12, 400, 1)
 	End Function
-	
+
 	Public Function isC3() As Boolean
 		Return CheckModel(12, 1000, 2)
 	End Function
-	
+
 	Public Function isC5() As Boolean
-		Return CheckModel(4, 1000,6)
+		Return CheckModel(4, 1000, 6)
 	End Function
-	
+
 	Public Function isC8A() As Boolean
-		Return CheckModel(22, 1000,2)
+		Return CheckModel(22, 1000, 2)
 	End Function
-	
+
 	Public Function isC10() As Boolean
-		Return CheckModel(4, 1000,2)
+		Return CheckModel(4, 1000, 2)
 	End Function
-	
+
 	Public Function isDD4() As Boolean
-		Return CheckModel(4, 1000,0)
+		Return CheckModel(4, 1000, 0)
 	End Function
-	
+
 	Public Function isDD6() As Boolean
-		Return CheckModel(22, 1000,0)
+		Return CheckModel(22, 1000, 0)
 	End Function
-	
+
 	Public Function CheckModel(kin As Integer, model1 As Integer, model2 As Integer) as Boolean
-		Dim hw_Kin As Integer = Controller.PDbNum(DataID_RobotKinematics)
-		Dim hw_Model1 As Integer = Controller.PDbNum(DataID_RobotModel)
-		Dim hw_Model2 As Integer = Controller.PDbNum(DataID_RobotModel2)
-		
-		If(hw_Kin = kin And hw_Model1 = model1 And hw_Model2 = model2) Then
+		Dim hw_Kin As Integer = Controller.PDbNum(PDB_KINE)
+		Dim hw_Model1 As Integer = Controller.PDbNum(PDB_ROBOT_MODEL)
+		Dim hw_Model2 As Integer = Controller.PDbNum(PDB_ROBOT_MODEL2)
+
+		If (hw_Kin = kin And hw_Model1 = model1 And hw_Model2 = model2) Then
 			Return True
 		End If
-		
+
 		Return False
-	End Function	
+	End Function
+
+	Public Sub UpdateRobotDefinition(RB As Integer)
+		Dim robot_model As Integer
+		Dim exc1 As New Exception
+
+		Try                                 ' Get robot model ID
+			robot_model = Controller.PDbNum(PDB_ROBOT_MODEL, RB)
+		Catch exc1
+			robot_model = 0
+		End Try
+
+		RobotHasExtendedReach = True
+		RobotHasGripper = False
+		RobotGripperAxis = 0
+		RobotHasDualGripper = False
+		RobotDualGripperAxis = 0
+		RobotHas23NGripper = False
+		RobotHasRail = False
+		RobotRailAxis = 0
+		RobotRailAxisOrientation = 0
+		RobotVerticalAxis = 1
+
+		Select (Controller.PDBNum(PDB_KINE))' Kinematic module type
+			Case 4, 22                  ' PreciseFlex DD4/DD6/C5/C8/C10 robot
+				RobotVerticalAxis = 2
+				GetDetails_RPRR(RB)
+			Case 9                      ' PrecisePlace 100 Cartesian robot
+				RobotVerticalAxis = 2
+				GetDetails_CartesianAdvanced(RB)
+			Case 12                     ' PreciseFlex 400/C3 robot
+				RobotVerticalAxis = 1
+				GetDetails_PRRR(RB)
+		End Select
+	End Sub
+
+	Public Sub GetDetails_CartesianAdvanced(RB As Integer)
+		'  PRECISEPLACE 1XX ROBOT
+		'      X Axis
+		'      Y Axis (optional)
+		'      Z Axis (optional)
+		'      Theta Axis (optional)
+		'      Jt 5 (Optional gripper)
+
+		Dim max_Jt, axis_mask As Integer
+		Dim jt As Integer
+
+		Max_Jt = Controller.PDBNum(PDB_NUMAXES, RB) ' Number of configured axes
+		axis_mask = Controller.PDbNum(PDB_AXIS_MASK, RB) ' Mask of enabled axes
+
+		RobotName = "PRECISEPLACE 01xx" ' Identify robot model
+
+		jt = 1                              ' X-axis required
+
+		If (Axis_Mask And &H2) Then         ' Optional Y configured?
+			jt += 1
+		End If
+
+		If (Axis_Mask And &H4) Then         ' Optional Z configured?
+			jt += 1
+		End If
+
+		If (Axis_Mask And &H8) Then         ' Optional Theta configured?
+			jt += 1
+		End If
+
+		If (Axis_Mask And &H10) Then        ' Optional gripper configured?
+			jt += 1
+			RobotHasGripper = True
+			RobotGripperAxis = jt
+		End If
+
+	End Sub
+
+	Public Sub GetDetails_PRRR(RB As Integer)
+
+		Dim max_Jt, axis_mask As Integer
+		Dim ext_reach, is_pf400, is_3kg, is_abs_grip, is_c, is_tng As Boolean
+		Dim stg As String
+		Dim jt As Integer
+		Dim exc1 As New Exception
+
+		Max_Jt = Controller.PDBNum(PDB_NUMAXES, RB) ' Number of configured axes
+		axis_mask = Controller.PDbNum(PDB_AXIS_MASK, RB) ' Mask of enabled axes
+
+		Try                                 ' Determine if 3kg version and if C
+			is_3kg = (Controller.PDbNum(PDB_ROBOT_MODEL2, RB) And ROB_PF3400) <> 0
+			is_c = (Controller.PDbNum(PDB_ROBOT_MODEL2, RB) And ROB_CSERIES) <> 0
+		Catch exc1
+			is_3kg = False
+			is_c = False
+		End Try
+		Try                                 ' Determine if tng (rev D robot)
+			is_tng = Controller.PDbNum(PDB_GPL_VER) > 4
+		Catch exc1
+			is_tng = False
+		End Try
+
+		' Determine if its an extended reach or no yaw robot.
+
+		RobotHasExtendedReach = Controller.PDbNum(PDB_KINE_CONST, RB, 0, 2) > 280 ' Extended reach?
+		is_pf400 = Axis_Mask And &H08           ' Yaw axis configured?
+
+		If (is_c) Then
+			RobotName = "PRECISEFLEX C3"
+		Else
+			If (is_3kg) Then
+				RobotName = "PRECISEFLEX 3400 (3kg)"
+			Else
+				If (is_pf400) Then
+					RobotName = "PRECISEFLEX 400"
+				Else
+					RobotName = "PRECISEFLEX 300"
+				End If
+			End If
+		End If
+		jt = 4
+		If (Axis_Mask And &H20) Then        ' Gripper?
+			jt+=1
+			RobotHasGripper = True
+			RobotGripperAxis = jt
+			If (Controller.PDbNum(PDB_ENCODER_TYPE, RB, 0, jt) = 47) Then ' 23N gripper
+				RobotHas23NGripper = True
+			Else                            ' PF3400 SPG grip, abs, homes to close
+				RobotHas23NGripper = False
+			End If
+		End If
+
+		If (Axis_Mask And &H40) Then        ' Linear traverse?
+			jt+=1
+			RobotHasRail = True
+			RobotRailAxis = jt
+
+			Dim railOrientation As Double 
+			railOrientation = Controller.PDbNum(PDB_KINE_CONST, 1, 0, 5) '0 for 0 deg, -90 for 90 deg
+			If (railOrientation = 0) Then 'Rail set to 0 deg
+				RobotRailAxisOrientation = 0
+			Else
+				RobotRailAxisOrientation = 90
+			End If
+		End If
+
+		If (Axis_Mask And &H80) Then        ' Dual 23N gripper?
+			jt+=1
+			RobotHasDualGripper = True
+			RobotDualGripperAxis = jt
+		End If
+
+	End Sub
+
+
+	Public Sub GetDetails_RPRR(RB As Integer)
+		Dim max_Jt, axis_mask As Integer
+		Dim is_6axis, has_grip, is_abs_grip, is_c, is_c5, has_rail, has_dual_grip As Boolean
+		Dim jt, grip_mask, gidx, dgidx, rail_mask, dual_grip_mask, ridx As Integer
+		Dim str As String
+		Dim exc1 As New Exception
+
+		max_Jt = Controller.PDBNum(PDB_NUMAXES, RB) ' Number of configured axes
+		axis_mask = Controller.PDbNum(PDB_AXIS_MASK, RB) ' Mask of enabled axes
+
+
+		' Determine if it is a C-series robot (C5, C8, C10)
+		Try                                 ' Determine if C series robot
+			is_c = (Controller.PDbNum(PDB_ROBOT_MODEL2, RB) And ROB_CSERIES) <> 0
+			is_c5 = (Controller.PDbNum(PDB_ROBOT_MODEL2, RB) And ROB_C5) <> 0
+		Catch exc1
+			is_c = False
+			is_c5 = False
+		End Try
+
+		' Determine if it is a four or six axis configuration, and whether it has
+		' a servo gripper and if so, what type. 
+
+		is_6axis = (Controller.PDBNum(PDB_KINE) = 22)  ' 6-axis kinematics?
+		If is_6axis Then
+			If is_c Then                    ' C8 is new PFDD6
+				RobotName = "PRECISEFLEX C8"
+			Else                            ' PFDD6
+				RobotName = "PRECISEFLEX DD 6-AXIS"
+			End If
+			grip_mask = &H40                ' Gripper bit mask
+			jt = 6                        ' Gripper index
+		Else
+			If is_c Then                    ' C10 is new PFDD4, C5 is little brother of C10
+				If is_c5 Then
+					RobotName = "PRECISEFLEX C5"
+
+				Else
+					RobotName = "PRECISEFLEX C10"
+				End If
+			Else                            ' PFDD4
+				RobotName = "PRECISEFLEX DD 4-AXIS"
+			End If
+			grip_mask = &H20
+			rail_mask = &H40
+			dual_grip_mask = &H80
+			jt = 4
+
+		End If
+		
+		If (Axis_Mask And grip_mask) Then        ' Gripper?
+			jt+=1
+			RobotHasGripper = True
+			RobotGripperAxis = jt
+			If (Controller.PDbNum(PDB_ENCODER_TYPE, RB, 0, jt) = 47) Then ' 23N gripper
+				RobotHas23NGripper = True
+			Else                            ' PF3400 SPG grip, abs, homes to close
+				RobotHas23NGripper = False
+			End If
+		End If
+
+		If (Axis_Mask And rail_mask) Then        ' Linear traverse?
+			jt+=1
+			RobotHasRail = True
+			RobotRailAxis = jt
+		End If
+
+		If (Axis_Mask And dual_grip_mask) Then        ' Dual 23N gripper?
+			jt+=1
+			RobotHasDualGripper = True
+			RobotDualGripperAxis = jt
+		End If
+
+	End Sub
+
+	Public Sub SavePacFilesToFlash()
+		Dim ii As Integer
+		Controller.PDBNum(PDB_WRITE_PAC) = 6   ' Write new cal data to the flash
+		For ii = 1 To 30                ' Wait for disk write to complete
+			Thread.sleep(1000)
+			If (Not Controller.PDbNum(PDB_DISK_BUSY, 1)) Then
+				Exit For
+			End If
+		Next ii
+	End Sub
 
 End Module
