@@ -70,17 +70,23 @@ Module Lib_MoveQueue
 		End Sub
 
 		Public Sub RunWithRecovery(clear As Boolean)
+			Dim gripperPos As Location = RobotLastCommandedPosition()
 			Dim sucess As Boolean = False
 			Dim err As Exception
 			index = 0
 			While (sucess = False)
 				Try
 					RobotInit()
+					If(ErrorOccured And RobotHasGripper) Then
+						Move.WaitForEOM
+						Move.OneAxis(RobotGripperAxis, gripperPos.Angle(RobotGripperAxis),False, Flip_Profile)
+					End If
 					Move.WaitForEOM
 					Run(index -1)
 					Move.WaitForEOM
 					sucess = True
 				Catch err
+					gripperPos = RobotLastCommandedPosition()
 					MsgLogger.LogLine(err.Message)
 					ErrorOccured = True
 					Thread.Sleep(RecoveryDelayMs)
@@ -122,6 +128,20 @@ Module Lib_MoveQueue
 			End If
 
 			Move.Loc(targetLocation, prof)
+		End Sub
+		
+		Public Sub FlipLeftToRight()
+			Clear()
+			AddNewMove(Flip_Lefty, Flip_Profile, False)
+			AddNewMove(Flip_Righty, Flip_Profile, False)
+			RunWithRecovery(True)
+		End Sub
+		
+		Public Sub FlipRightToLeft()
+			Clear()
+			AddNewMove(Flip_Righty, Flip_Profile, False)
+			AddNewMove(Flip_Lefty, Flip_Profile, False)
+			RunWithRecovery(True)
 		End Sub
 
 	End Class

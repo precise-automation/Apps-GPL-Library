@@ -1,36 +1,23 @@
 'Created: 4/10/2025 9:42 AM
+'Updated: 9/23/2026
 
 ''' <summary>
-''' User Defined Module
+''' Main Module
 ''' </summary>
 Module Lib_Apps
-	Public Const Vers As String = "Lib_Apps-0.0.5"
+	Public Const Vers As String = "Lib_Apps-0.3"
 	Public Dim MsgLogger As MessageLogger
 	
 	Public Sub Lib_Apps_Init()
 		Console.WriteLine(Vers)
+		Console.WriteLine("Error: This is a library project. Do not run this project directly.")
 		Thread.CurrentThread.Abort()
 	End Sub
-
-    ''' <summary>
-    ''' InitVariables
-    ''' </summary>
-    ''' <param name="axisGripper">Axis Number for Gripper</param>
-    ''' <param name="axisRail">Axis Number for Rail</param>
-    Public Sub Lib_Apps_Init(axisGripper As Integer, axisRail As Integer)
+	
+	Public Sub AppsLibInit()
 		MsgLogger = New MessageLogger()
 		MsgLogger.LogLine(Vers)
-		
-		RobotGripperAxis = axisGripper
-		RobotRailAxis = axisRail
-		
-		If(axisGripper > 0) Then
-			RobotHasGripper = True
-		End If
-		
-		If(axisRail > 0) Then
-			RobotHasRail = true
-		End If
-    End Sub 
+		UpdateRobotDefinition(1)
+	End Sub
 
 End Module

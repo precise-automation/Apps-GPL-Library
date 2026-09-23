@@ -4,7 +4,7 @@
 ''' Locations Library v0.1
 ''' </summary>
 Module Lib_Locations
-	
+
 	''' <summary>
 	''' Print Location to Message Logger
 	''' </summary>
@@ -51,8 +51,8 @@ Module Lib_Locations
 		End If
 		Return msg
 	End Function
-	
-	
+
+
 	''' <summary>
 	''' Updates a Location Variable in the GPO File on the flash version of the program
 	''' <param name="locationName"> Name of the location varaible </param> 
@@ -172,26 +172,26 @@ Module Lib_Locations
 
 		' If arm is already in range
 		If LocationsInRange(targetLoc, refenceLoc) Then Return
-		
+
 		' Check if flip is needed
 		FlipArmConfig(refenceLoc)
 		flipArmNeeded = True
 		If LocationsInRange(targetLoc, refenceLoc) Then ' Found solution
 			Return
 		End If
-		
+
 		' If arm has a rail
 		If RobotHasRail Then
 			railMoveNeeded = True
 			Dim axis As Integer = RobotRailAxis
-			Dim maxRail As Double = RobotGetJointLimits(axis, False, True)-2
-			Dim minRail As Double = RobotGetJointLimits(axis, True, True)+2
+			Dim maxRail As Double = RobotGetJointLimits(axis, False, True) -2
+			Dim minRail As Double = RobotGetJointLimits(axis, True, True) + 2
 			refenceLoc = orgRefrenceLoc.Clone
 			flipArmNeeded = False
 
 			If (targetLoc.Type = 1) Then 'Target Locating in Joint Space
 				newRailPos = targetLoc.Angle(RobotRailAxis)
-			ElseIf (RobotRailInX()) Then ' Rail oriented along x axis
+			ElseIf (RobotRailAxisOrientation = 0) Then ' Rail oriented along x axis
 				newRailPos = targetLoc.X
 			Else ' Rail Oriented along Y axis
 				newRailPos = targetLoc.Y
@@ -200,12 +200,12 @@ Module Lib_Locations
 
 			newRailPos = Math.Max(Math.Min(newRailPos, maxRail), minRail) 'Limit to rail range
 			refenceLoc.Angle(RobotRailAxis) = newRailPos
-			
+
 			' Check if rail is needed
 			If LocationsInRange(targetLoc, refenceLoc) Then ' Found solution
 				Return
 			End If
-			
+
 			' Check if flip and rail is needed
 			FlipArmConfig(refenceLoc)
 			flipArmNeeded = True
@@ -213,7 +213,7 @@ Module Lib_Locations
 				Return
 			End If
 		End If
-		
+
 		' No solution found
 		possible = False
 		flipArmNeeded = False
@@ -237,4 +237,56 @@ Module Lib_Locations
 			jointPos.Angle(targetJoint) = jointMid - (jointRange / 2) ' Force it to Righty
 		End If
 	End Sub
+	
+	''' <summary>
+	''' Two Part Approach or Depart of a location
+	''' </summary>
+	''' <param name="isAppro">Set Motion Order (True for Approach and False for Depart)</param>
+	''' <param name="finalLocation">Target location to move to in Cartesian Space</param>
+	''' <param name="approWorld">Approach Offset (World Space)</param>
+	''' <param name="approTool">Approach Offset (Tool Space)</param>
+	''' <param name="motionProfile">Motion Profile</param>
+	Public Sub ApproDepart(isAppro As Boolean, finalLocation As Location, approWorld As Double, approTool As Double, motionProfile As Profile)
+		Dim appro As Location = finalLocation.Clone
+		Dim prof_straight As Profile = motionProfile.Clone
+		appro.ZClearance = approTool
+		appro.ZWorld = False
+		appro.Z += approWorld
+		prof_straight.Straight = True
+
+		If (isAppro) Then
+			Move.Approach(appro, motionProfile)
+			Move.Loc(appro, prof_straight)
+			Move.Loc(finalLocation, prof_straight)
+		Else
+			Move.Loc(finalLocation, prof_straight)
+			Move.Loc(appro, prof_straight)
+			Move.Approach(appro, prof_straight)
+		End If
+	End Sub
+
+	Public Sub MoveApproZ(location As Location, profile As Profile, ApproZOffset As Double)
+		Dim a As Location = CalcApproZ(location, ApproZOffset)
+		Move.Loc(a, Profile)
+	End Sub
+
+	Public Function CalcApproZ(location As Location, ApproZOffset As Double) As Location
+		Dim a As location = location.Clone()
+		a.X += ApproZOffset
+		Return a
+	End Function
+
+	Public Sub MoveApproXZ(location As Location, profile As Profile, ApproXOffset As Double, ApproZOffset As Double)
+		Dim a As Location = CalcApproXZ(location, ApproXOffset, ApproZOffset)
+		Move.Loc(a, Profile)
+	End Sub
+
+	Public Function CalcApproXZ(location As Location, ApproXOffset As Double, ApproZOffset As Double) As Location
+		Dim a As location = location.Clone()
+		a.X += ApproZOffset
+		a.Z += ApproXOffset
+		Return a
+	End Function
+
+
 End Module

@@ -15,3 +15,5 @@
 <p>4. In the Project Dropdown select the Lib_Apps project and click "Accept"</p>
 
 <p>5. Click "Accept" in the Project Properties window</p>
+
+<p>6. At the top of your main, add the line "AppsLibInit()" to initiate Message Logger and Auto identify the robot</p>

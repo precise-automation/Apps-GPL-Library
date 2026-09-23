@@ -1,35 +1,22 @@
 'GPL Generated Code.  Please do not manually edit
-'Created: 3/30/2026 10:07:41 AM
+'Created: 6/15/2026 11:45:58 AM
 
 Module DefaultMotionProfiles
   Public Frame_Vision_Result As RefFrame
-  Public PalletFrame As RefFrame
   Public starting_position As Location
   Public Vision_Offset As Location
   Public profile_default As Profile
   Public profile_default_straight As Profile
   Public profile_fast_blend As Profile
+  Public profile_default_blended As Profile
+  Public profile_gripper As Profile
+  Public profile_recovery As Profile
 
   Public Sub Init 
     '<MotionFrame>Frame_Vision_Result
     Frame_Vision_Result = New RefFrame
     Frame_Vision_Result.Type = 0
     Frame_Vision_Result.Loc.XYZ(0,0,0,0,0,0)
-    '</MotionFrame>
-    '<MotionFrame>PalletFrame
-    PalletFrame = New RefFrame
-    PalletFrame.Type = 1
-    PalletFrame.PalletIndex(1) = 1
-    PalletFrame.PalletIndex(2) = 1
-    PalletFrame.PalletIndex(3) = 1
-    PalletFrame.PalletMaxIndex(1) = 1
-    PalletFrame.PalletMaxIndex(2) = 1
-    PalletFrame.PalletMaxIndex(3) = 1
-    PalletFrame.PalletPitch(1) = 0
-    PalletFrame.PalletPitch(2) = 0
-    PalletFrame.PalletPitch(3) = 0
-    PalletFrame.PalletOrder = 0
-    PalletFrame.Loc.XYZ(0,0,0,0,0,0)
     '</MotionFrame>
     '<MotionLocation>starting_position
     starting_position = New Location 
@@ -50,23 +37,23 @@ Module DefaultMotionProfiles
     '</MotionLocation>
     '<MotionProfile>profile_default
     profile_default = New Profile
-    profile_default.Speed = 25
+    profile_default.Speed = 50
     profile_default.Speed2 = 0
-    profile_default.Accel = 50
-    profile_default.Decel = 50
-    profile_default.AccelRamp = 0.1
-    profile_default.DecelRamp = 0.1
+    profile_default.Accel = 75
+    profile_default.Decel = 75
+    profile_default.AccelRamp = 0.3
+    profile_default.DecelRamp = 0.3
     profile_default.Straight = False
     profile_default.InRange = 10
     '</MotionProfile>
     '<MotionProfile>profile_default_straight
     profile_default_straight = New Profile
-    profile_default_straight.Speed = 100
+    profile_default_straight.Speed = 25
     profile_default_straight.Speed2 = 0
     profile_default_straight.Accel = 75
     profile_default_straight.Decel = 75
-    profile_default_straight.AccelRamp = 0.1
-    profile_default_straight.DecelRamp = 0.1
+    profile_default_straight.AccelRamp = 0.3
+    profile_default_straight.DecelRamp = 0.3
     profile_default_straight.Straight = True
     profile_default_straight.InRange = 10
     '</MotionProfile>
@@ -80,6 +67,39 @@ Module DefaultMotionProfiles
     profile_fast_blend.DecelRamp = 0.1
     profile_fast_blend.Straight = False
     profile_fast_blend.InRange = -1
+    '</MotionProfile>
+    '<MotionProfile>profile_default_blended
+    profile_default_blended = New Profile
+    profile_default_blended.Speed = 50
+    profile_default_blended.Speed2 = 0
+    profile_default_blended.Accel = 75
+    profile_default_blended.Decel = 75
+    profile_default_blended.AccelRamp = 0.3
+    profile_default_blended.DecelRamp = 0.3
+    profile_default_blended.Straight = False
+    profile_default_blended.InRange = 10
+    '</MotionProfile>
+    '<MotionProfile>profile_gripper
+    profile_gripper = New Profile
+    profile_gripper.Speed = 100
+    profile_gripper.Speed2 = 0
+    profile_gripper.Accel = 100
+    profile_gripper.Decel = 100
+    profile_gripper.AccelRamp = 0.1
+    profile_gripper.DecelRamp = 0.1
+    profile_gripper.Straight = False
+    profile_gripper.InRange = 10
+    '</MotionProfile>
+    '<MotionProfile>profile_recovery
+    profile_recovery = New Profile
+    profile_recovery.Speed = 20
+    profile_recovery.Speed2 = 0
+    profile_recovery.Accel = 25
+    profile_recovery.Decel = 25
+    profile_recovery.AccelRamp = 0.5
+    profile_recovery.DecelRamp = 0.5
+    profile_recovery.Straight = False
+    profile_recovery.InRange = 10
     '</MotionProfile>
   End Sub 
 End Module 

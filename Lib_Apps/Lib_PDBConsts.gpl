@@ -1,0 +1,48 @@
+'Created: 9/23/2026 9:35 AM
+'Updated: 9/23/2026
+
+''' <summary>
+''' PDB Constants
+''' </summary>
+Module Lib_PDBConts
+	Public Const PDB_GPL_VER As Integer = 104  		   	' GPL version
+	Public Const PDB_KINE As Integer = 116             	' Kinematic module ID
+	Public Const PDB_SRV_NET_NODES As Integer = 151    	' Servo network node IDS
+	 
+	Public Const PDB_WRITE_PAC As Integer = 901        	' Write calib data to disk
+	Public Const PDB_DISK_BUSY As Integer = 910        	' Wait for disk idle
+	Public Const PDB_DIALOG_DAT As Integer = 1700      	' Text written to dialog box
+	 
+	Public Const PDB_NUMAXES As Integer = 2000         	' Number of axes
+	Public Const PDB_ROBOT_NAME As Integer = 2002      	' Robot name string
+	Public Const PDB_AXIS_MASK As Integer = 2003       	' Axis mask
+	Public Const PDB_ROBOT_MODEL As Integer = 2007     	' Robot model number
+	Public Const PDB_ROBOT_MODEL2 As Integer = 2008    	' Robot model number #2
+	Public Const PDB_ENCODER_TYPE As Integer = 10027   	' Type of encoder
+	Public Const PDB_ENCODER_SIGN As Integer = 10202   	' +1/-1 Encoder sign
+	Public Const PDB_CNTS_PER_TURN As Integer = 10203  	' Encoder cnts/revolution
+	Public Const PDB_IGNORE_BAT As Integer = 10251     	' Ignore battery errors
+	Public Const PDB_CUR_ENC_POS As Integer = 12202    	' Current encoder position
+	Public Const PDB_LATCHED_ENC As Integer = 12220    	' Latched enc index position
+	Public Const PDB_RAW_INDEX_ENC As Integer = 12225  	' Last detected enc index
+	Public Const PDB_PA_ENC_INDEX As Integer = 12240   	' Last index code for PA PAbs
+	Public Const PDB_SNGL_TURN_DATA As Integer = 12253 	' Abs Enc single turn data
+	Public Const PDB_ABS_ENC_BUSY As Integer = 12261   	' Abs encoder status word
+	 
+	Public Const PDB_SRV_SELECT_AXIS As Integer = 14500	' Select servo to send cmd
+	Public Const PDB_SRV_SET_BRAKE As Integer = 14002  	' Remote axis brake control
+	Public Const PDB_SRV_SEND_CMD As Integer = 14065   	' Send cmd to selected servo
+	 
+	Public Const PDB_KINE_CONST As Integer = 16050     	' Kinematic constants
+	Public Const PDB_DFF_MASS As Integer = 16067       	' DFF link mass constants, Kg
+	Public Const PDB_MAX_HARD_LIMIT As Integer = 16075 	' Max hardstop limit
+	Public Const PDB_MIN_HARD_LIMIT As Integer = 16076 	' Min hardstop limit
+	Public Const PDB_MAX_SOFT_LIMIT As Integer = 16077 	' Max softstop limit
+	Public Const PDB_MIN_SOFT_LIMIT As Integer = 16078 	' Min softstop limit
+	Public Const PDB_CAL_HOME_OFFSET As Integer = 16120	' Encoder offset at home pos
+	Public Const PDB_PA_CAL_INDEX As Integer = 16241   	' PA enc index code at cal pos
+	Public Const PDB_PA_CAL_ABS_ENC As Integer = 16242 	' PA enc offset at homse pos
+	Public Const PDB_CUS_CAL_STG As Integer = 17000    	' Label for 1st custom cal set
+	Public Const PDB_CUS_CAL_VAL As Integer = 17001    	' Data array for 1st custom cal set
+
+End Module

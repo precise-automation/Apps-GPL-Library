@@ -1,0 +1,36 @@
+'Created: 8/25/2026 8:42 AM
+
+''' <summary>
+''' User Defined Module
+''' </summary>
+Module Lib_SpecialModes
+	Public Dim torques(12) As Double  
+	Public Dim torqueModeEnabled As Boolean = False
+	Public Dim torqueModeAxisMask As Integer = 0
+	
+	Public Sub StartTorqueMode (axisMask As Integer, startingTorque As Integer)
+		Dim ii As Integer	
+		For ii=1 To 12
+			If(CheckAxisInMask(axisMask, ii)) Then
+				torques(ii-1) = startingTorque
+			End If
+		Next ii
+		Move.StartTorqueCntrl(axisMask, 0, torques)   ' Set motor 1 to torque mode
+		torqueModeAxisMask = axisMask
+		torqueModeEnabled = True
+	End Sub
+	
+	Public Sub UpdateTorque(axis As Integer, value As Double)
+		torques(axis-1) = value
+		Move.SetTorques(torques)  
+	End Sub
+	
+	Public Sub StopSpecialModes
+		If(torqueModeEnabled = True) Then
+			Move.StopSpecialModes
+		End If
+		torqueModeEnabled = False
+		Thread.Sleep(1000)
+	End Sub
+
+End Module
