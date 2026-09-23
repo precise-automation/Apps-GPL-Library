@@ -1,7 +1,8 @@
+'Created: 9/23/2026
+'Updated 9/23/2026
 
 ''' <summary>
 ''' Robot Model Information Lookup
-''' 9/23/2026
 ''' </summary>
 Module Lib_RobotModels
 
@@ -14,6 +15,7 @@ Module Lib_RobotModels
 	Private Const ROB_C5 As Integer = 4 
 
 	Public Dim RobotName As String = ""
+	Public Dim RobotIsTNG As Boolean = False
 	
 	Public Dim RobotHasExtendedReach As Boolean = True
 
@@ -76,6 +78,28 @@ Module Lib_RobotModels
 
 		Return False
 	End Function
+	
+	''' <summary>
+	''' Gets Robots number of Axis
+	''' </summary>
+	''' <returns>Number of Axis</returns>
+	Public Function RobotNumberOfAxis() As Integer
+		Return CInt(Controller.PDbNum(PDB_NUMAXES))
+	End Function
+
+	''' <summary>
+	''' Checks if the current robot has a rotary column (Via ID 116)
+	''' </summary>
+	''' <returns>True if the column rotates</returns>
+	Public Function RobotHasRotaryColumn() As Boolean
+		Dim KinematicsType As Integer = CInt(Controller.PDbNum(PDB_KINE, 1, 1, 1))
+
+		If (KinematicsType = Const_Kin_RPRR) Then 'RPRR
+			Return True
+		Else
+			Return False
+		End If
+	End Function
 
 	Public Sub UpdateRobotDefinition(RB As Integer)
 		Dim robot_model As Integer
@@ -85,6 +109,12 @@ Module Lib_RobotModels
 			robot_model = Controller.PDbNum(PDB_ROBOT_MODEL, RB)
 		Catch exc1
 			robot_model = 0
+		End Try
+		
+		Try                                 ' Determine if tng (rev D robot)
+			RobotIsTNG = Controller.PDbNum(PDB_GPL_VER) > 4
+		Catch exc1
+			RobotIsTNG = False
 		End Try
 
 		RobotHasExtendedReach = True
@@ -97,15 +127,17 @@ Module Lib_RobotModels
 		RobotRailAxis = 0
 		RobotRailAxisOrientation = 0
 		RobotVerticalAxis = 1
+		
+
 
 		Select (Controller.PDBNum(PDB_KINE))' Kinematic module type
-			Case 4, 22                  ' PreciseFlex DD4/DD6/C5/C8/C10 robot
+			Case Const_Kin_RPRR, Const_Kin_RPRRRR                  ' PreciseFlex DD4/DD6/C5/C8/C10 robot
 				RobotVerticalAxis = 2
 				GetDetails_RPRR(RB)
-			Case 9                      ' PrecisePlace 100 Cartesian robot
+			Case Const_Kin_PPR                      ' PrecisePlace 100 Cartesian robot
 				RobotVerticalAxis = 2
 				GetDetails_CartesianAdvanced(RB)
-			Case 12                     ' PreciseFlex 400/C3 robot
+			Case Const_Kin_PRRR                     ' PreciseFlex 400/C3 robot
 				RobotVerticalAxis = 1
 				GetDetails_PRRR(RB)
 		End Select
@@ -167,12 +199,7 @@ Module Lib_RobotModels
 			is_3kg = False
 			is_c = False
 		End Try
-		Try                                 ' Determine if tng (rev D robot)
-			is_tng = Controller.PDbNum(PDB_GPL_VER) > 4
-		Catch exc1
-			is_tng = False
-		End Try
-
+		
 		' Determine if its an extended reach or no yaw robot.
 
 		RobotHasExtendedReach = Controller.PDbNum(PDB_KINE_CONST, RB, 0, 2) > 280 ' Extended reach?

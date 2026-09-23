@@ -191,7 +191,7 @@ Module Lib_Locations
 
 			If (targetLoc.Type = 1) Then 'Target Locating in Joint Space
 				newRailPos = targetLoc.Angle(RobotRailAxis)
-			ElseIf (RobotRailInX()) Then ' Rail oriented along x axis
+			ElseIf (RobotRailAxisOrientation = 0) Then ' Rail oriented along x axis
 				newRailPos = targetLoc.X
 			Else ' Rail Oriented along Y axis
 				newRailPos = targetLoc.Y

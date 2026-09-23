@@ -20,25 +20,4 @@ Module Lib_Apps
 		GetDetails_PRRR(1)
 	End Sub
 
-    ''' <summary>
-    ''' InitVariables
-    ''' </summary>
-    ''' <param name="axisGripper">Axis Number for Gripper</param>
-    ''' <param name="axisRail">Axis Number for Rail</param>
-    Public Sub Lib_Apps_Init(axisGripper As Integer, axisRail As Integer)
-		MsgLogger = New MessageLogger()
-		MsgLogger.LogLine(Vers)
-		
-		RobotGripperAxis = axisGripper
-		RobotRailAxis = axisRail
-		
-		If(axisGripper > 0) Then
-			RobotHasGripper = True
-		End If
-		
-		If(axisRail > 0) Then
-			RobotHasRail = true
-		End If
-    End Sub 
-
 End Module

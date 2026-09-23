@@ -1,7 +1,8 @@
 'Created: 4/8/2025 2:20 PM
+'Updated 9/23/2026
 
 ''' <summary>
-''' Robot Library v0.4
+''' Robot Library v0.5
 ''' </summary>
 Module Lib_Robot
 
@@ -81,49 +82,6 @@ Module Lib_Robot
 	End Function
 
 	''' <summary>
-	''' Gets Robots number of Axis
-	''' </summary>
-	''' <returns>Number of Axis</returns>
-	Public Function RobotNumberOfAxis() As Integer
-		Return CInt(Controller.PDbNum(2000))
-	End Function
-
-	''' <summary>
-	''' Checks if the current robot has a rotary column (Via ID 116)
-	''' </summary>
-	''' <returns>True if the column rotates</returns>
-	Public Function RobotHasRotaryColumn() As Boolean
-		Dim KinematicsType As Integer = CInt(Controller.PDbNum(116, 1, 1, 1))
-
-		If (KinematicsType = 4) Then 'RPRR
-			Return True
-		ElseIf (KinematicsType = 12) Then 'PRRR
-			Return False
-		Else
-			Dim err As New Exception
-			err.ErrorCode = -1337
-			err.Message = "Invalid Kinematics Type : " & CStr(KinematicsType)
-			Throw err
-		End If
-	End Function
-
-	''' <summary>
-	''' Returns robot optional linear rail orientation (-90 = x-axis, 0=y-axis) 
-	''' </summary>
-	''' <returns>Rail Orientation (-90 = x-axis, 0=y-axis)</returns>
-	Public Function RobotRailOrientation() As Double
-		Return CInt(Controller.PDbNum(16050, , , 5))
-	End Function
-
-	''' <summary>
-	''' Helper function to return if rail is in X axis vs Y axis
-	''' </summary>
-	''' <returns>True if in X axis, False if in Y axis</returns>
-	Public Function RobotRailInX() As Boolean
-		Return RobotRailOrientation() < 0
-	End Function
-
-	''' <summary>
 	''' Gets Robot Joint Software Limits
 	''' </summary>
 	''' <param name="axis">Axis Number (base 1)</param>
@@ -131,20 +89,16 @@ Module Lib_Robot
 	''' <param name="getSoftLimit">Set Flag TRUE for Soft limit, Set FALSE for Hard Limit</param>
 	''' <returns></returns>
 	Public Function RobotGetJointLimits(axis As Integer, getMinLimit As Boolean, getSoftLimit As Boolean) As Double
-		Dim IdMinHard As Integer = 16076
-		Dim IdMinSoft As Integer = 16078
-		Dim IdMaxSoft As Integer = 16077
-		Dim IdMaxHard As Integer = 16075
 		Dim targetID As Integer
 
 		If (getMinLimit And getSoftLimit) Then
-			targetID = IdMinSoft
+			targetID = PDB_MIN_SOFT_LIMIT
 		ElseIf (Not (getMinLimit) And getSoftLimit) Then
-			targetID = IdMaxSoft
+			targetID = PDB_MAX_SOFT_LIMIT
 		ElseIf (getMinLimit And Not (getSoftLimit)) Then
-			targetID = IdMinHard
+			targetID = PDB_MIN_HARD_LIMIT
 		Else
-			targetID = IdMaxHard
+			targetID = PDB_MAX_HARD_LIMIT
 		End If
 
 		Return Controller.PDbNum(targetID, , , axis)
