@@ -17,7 +17,7 @@ Module Lib_Apps
 	Public Sub AppsLibInit()
 		MsgLogger = New MessageLogger()
 		MsgLogger.LogLine(Vers)
-		GetDetails_PRRR(1)
+		UpdateRobotDefinition(1)
 	End Sub
 
 End Module
