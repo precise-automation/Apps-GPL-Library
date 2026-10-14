@@ -1,4 +1,5 @@
 'Created: 3/30/2026 9:59 AM
+'Updated 10/14/2026
 
 ''' <summary>
 ''' Locations Library v0.1
@@ -247,46 +248,52 @@ Module Lib_Locations
 	''' <param name="approTool">Approach Offset (Tool Space)</param>
 	''' <param name="motionProfile">Motion Profile</param>
 	Public Sub ApproDepart(isAppro As Boolean, finalLocation As Location, approWorld As Double, approTool As Double, motionProfile As Profile)
-		Dim appro As Location = finalLocation.Clone
 		Dim prof_straight As Profile = motionProfile.Clone
-		appro.ZClearance = approTool
-		appro.ZWorld = False
-		appro.Z += approWorld
+		Dim a As Location = CalcApproWorldZ(finalLocation, approWorld)
+		Dim b As Location = CalcApproToolZ(a, approTool)
 		prof_straight.Straight = True
 
 		If (isAppro) Then
-			Move.Approach(appro, motionProfile)
-			Move.Loc(appro, prof_straight)
+			Move.Loc(b, motionProfile)
+			Move.Loc(a, prof_straight)
 			Move.Loc(finalLocation, prof_straight)
 		Else
 			Move.Loc(finalLocation, prof_straight)
-			Move.Loc(appro, prof_straight)
-			Move.Approach(appro, prof_straight)
+			Move.Loc(a, prof_straight)
+			Move.Loc(b, prof_straight)
 		End If
 	End Sub
 
-	Public Sub MoveApproZ(location As Location, profile As Profile, ApproZOffset As Double)
-		Dim a As Location = CalcApproZ(location, ApproZOffset)
-		Move.Loc(a, Profile)
-	End Sub
-
-	Public Function CalcApproZ(location As Location, ApproZOffset As Double) As Location
-		Dim a As location = location.Clone()
-		a.X += ApproZOffset
-		Return a
+	Public Function CalcApproWorldZ(ByVal loc As Location, ByVal worldZOffset As Double) As Location
+		Dim res As Location = loc.Clone().Pos()
+		Dim fram As New RefFrame
+		fram.Loc.XYZ(0, 0, worldZOffset)
+		res.RefFrame = fram
+		Return res.Pos()
 	End Function
-
-	Public Sub MoveApproXZ(location As Location, profile As Profile, ApproXOffset As Double, ApproZOffset As Double)
-		Dim a As Location = CalcApproXZ(location, ApproXOffset, ApproZOffset)
-		Move.Loc(a, Profile)
-	End Sub
-
-	Public Function CalcApproXZ(location As Location, ApproXOffset As Double, ApproZOffset As Double) As Location
-		Dim a As location = location.Clone()
-		a.X += ApproZOffset
-		a.Z += ApproXOffset
-		Return a
+	
+	Public Function CalcApproToolZ(ByVal loc As Location, ByVal toolZOffset As Double) As Location
+		Dim res As Location
+		Dim offset As New Location
+		offset.Z = -1*toolZOffset
+		res = loc.Mul(offset)
+		Return res
 	End Function
-
+	
+	Public Sub MoveApproToolZ(ByVal loc As Location, ByVal toolZOffset As Double, ByVal prof As Profile)
+		Dim a As Location = CalcApproToolZ(loc, toolZOffset)
+		Move.Loc(a, prof)
+	End Sub
+	
+	Public Sub MoveApproWorldZ(ByVal loc As Location, ByVal worldZOffset As Double, ByVal prof As Profile)
+		Dim a As Location = CalcApproWorldZ(loc, worldZOffset)
+		Move.Loc(a, prof)
+	End Sub
+	
+	Public Sub MoveApproToolWorldZ(ByVal loc As Location, ByVal toolZOffset As Double, ByVal worldZOffset As Double, ByVal prof As Profile)
+		Dim a As Location = CalcApproToolZ(loc, toolZOffset)
+		Dim b As Location = CalcApproWorldZ(a, worldZOffset)
+		Move.Loc(b, prof)
+	End Sub
 
 End Module
