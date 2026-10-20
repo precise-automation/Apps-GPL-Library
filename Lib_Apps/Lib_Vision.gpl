@@ -1,15 +1,15 @@
 
 ''' <summary>
-''' Lib Apps Vision v0.3
+''' Lib Apps Vision v0.4
 ''' </summary>
 Module Lib_Vision
 
 	' Triggers Camera 1 or 2
 	Public Sub CameraAquire(isFront As Boolean)
 		If (isFront) Then
-			PerformCameraAction("system.cameraacquire 1")
+			SetCameraProperty("system.cameraacquire", "1")
 		Else
-			PerformCameraAction("system.cameraacquire 2")
+			SetCameraProperty("system.cameraacquire", "2")
 		End If
 	End Sub
 	
@@ -43,22 +43,21 @@ Module Lib_Vision
 
 
 #Region Vision Projects
-
 	Public Sub VisionProjectSave()
-		PerformCameraAction("system.save")
+		PerformCameraAction("system.save", "")
 	End Sub
 	
 	Public Sub VisionProjectSaveAs(projectName As String)
-		PerformCameraAction("system.saveas " & projectName)
+		PerformCameraAction("system.saveas", projectName)
 	End Sub
 	
 	Public Sub VisionProjectDelete(projectName As String)
-		PerformCameraAction("system.deleteproject " & projectName)
+		PerformCameraAction("system.deleteproject", projectName)
 	End Sub
 
 	' Loads the project of the specified name
 	Public Sub VisionProjectLoad(projectName As String)
-		PerformCameraAction("system.loadproject " & projectName)
+		PerformCameraAction("system.loadproject", projectName)
 	End Sub
 
 	' Returns the active project name
@@ -70,6 +69,64 @@ Module Lib_Vision
 	Public Function VisionProjectListAll() As String
 		Return GetCameraProperty("system.listprojects")
 	End Function
+#End Region
+	
+#Region Vision Process
+	' Create a new vision process
+	Public Sub Cmd_CreateVisionProcess(ByVal VisionProcessName As String)
+		SetCameraProperty("system.createprocess", VisionProcessName)
+	End Sub
+
+	' Gets a list of vision processes under current vision project
+	Public Function GetVisionProcessList() As String
+		Dim processList As String
+		processList = GetCameraProperty("system.listprocesses")
+		Return
+	End Function
+	
+	' Add vision tools to Vision Process
+	Public Sub UpdateVisionProject(ByVal ProjectName As String, ByRef ToolList() As String)
+		Dim ii As Integer
+		Dim Vcmd As String = ProjectName
+	
+		' Add vision tools
+		For ii = 1 To ToolList.Length
+			Vcmd &= " " & ToolList(ii)
+		Next ii
+
+		SetCameraProperty("system.updateprocess", Vcmd)
+	End Sub
+	
+#End Region
+
+#Region Vision Tools
+	' Creates a new instance of a vision tool in the current project
+	Public Sub CreateVisionTool(ByVal VisionToolType As String, ByVal CameraNumber As Integer, ByVal VisionToolName As String)
+		Dim vcmd As String
+		vcmd = VisionToolType & " " & CStr(CameraNumber) & " " & VisionToolName
+		SetCameraProperty("system.createtool", vcmd)
+	End Sub
+
+	' Gets the Vision Tool Type
+	Public Function GetVisionToolType(ByVal VisionTool As String) As String
+		Dim toolType As String
+		toolType = GetCameraProperty("system.tooltype " & VisionTool)
+		Return toolType
+	End Function
+
+	' Gets a list of vision tools in the current project
+	Public Function Cmd_GetVisionProjectToolList() As String
+		Dim toolList As String
+		toolList = GetCameraProperty("system.listtools")
+		Return toolList
+	End Function
+	
+	Public Function GetVisionProcessToolList(ByVal VisionProcess As String) As String
+		Dim toolList As String
+		toolList = GetCameraProperty("system.listprocess " & VisionProcess)
+		Return toolList
+	End Function
+
 #End Region
 
 
@@ -208,9 +265,9 @@ Module Lib_Vision
 		vis.ToolProperty(cmd) = value
 	End Sub
 	
-	Public Sub PerformCameraAction(cmd As String)
+	Public Sub PerformCameraAction(cmd As String, param As String)
 		Dim vis As New Vision
-		GetCameraProperty(cmd)
+		SetCameraProperty(cmd, param)
 	End Sub
 
 End Module
